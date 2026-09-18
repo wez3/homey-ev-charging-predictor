@@ -1,0 +1,16 @@
+{
+  "id": "prediction_updated",
+  "title": { "en": "A new prediction was calculated" },
+  "hint": {
+    "en": "Fires when the predicted departure or arrival time changes by more than a few minutes from the previous prediction."
+  },
+  "args": [
+    { "type": "device", "name": "device", "filter": "driver_id=ev_charging_predictor" }
+  ],
+  "tokens": [
+    { "name": "departureTime", "type": "string", "title": { "en": "Predicted departure" }, "example": "07:42" },
+    { "name": "departureConfidence", "type": "number", "title": { "en": "Departure confidence" }, "example": 72 },
+    { "name": "arrivalTime", "type": "string", "title": { "en": "Predicted arrival" }, "example": "18:05" },
+    { "name": "arrivalConfidence", "type": "number", "title": { "en": "Arrival confidence" }, "example": 55 }
+  ]
+}

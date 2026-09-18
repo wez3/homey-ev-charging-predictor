@@ -1,0 +1,52 @@
+<script type="application/javascript">
+  Homey.setTitle('Choose the EV charger');
+
+  let devices = [];
+
+  function renderDevices() {
+    const list = document.getElementById('device-list');
+    list.innerHTML = '';
+    if (devices.length === 0) {
+      list.innerHTML = '<p>No compatible EV chargers found. This app needs a charger app that reports the standard <code>evcharger_charging_state</code> capability.</p>';
+      return;
+    }
+    devices.forEach((device) => {
+      const item = document.createElement('div');
+      item.className = 'homey-form-group';
+      const button = document.createElement('button');
+      button.className = 'homey-button-secondary-shadow-full';
+      button.textContent = device.zoneName ? `${device.name} (${device.zoneName})` : device.name;
+      button.onclick = () => selectDevice(device);
+      item.appendChild(button);
+      list.appendChild(item);
+    });
+  }
+
+  async function selectDevice(device) {
+    try {
+      await Homey.emit('save_selection', { deviceId: device.id, deviceName: device.name });
+      Homey.showView('list_devices');
+    } catch (err) {
+      Homey.alert(err.message || String(err));
+    }
+  }
+
+  async function loadDevices() {
+    try {
+      devices = await Homey.emit('get_bindable_devices');
+      renderDevices();
+    } catch (err) {
+      Homey.alert(err.message || String(err));
+    }
+  }
+
+  loadDevices();
+</script>
+
+<fieldset class="homey-form-fieldset">
+  <legend class="homey-form-legend">Choose the EV charger</legend>
+  <p>Pick the EV charger whose connection state should drive departure and arrival
+  predictions. No further setup needed - Homey's standard charger capability handles
+  the rest.</p>
+  <div id="device-list"><p>Loading chargers...</p></div>
+</fieldset>

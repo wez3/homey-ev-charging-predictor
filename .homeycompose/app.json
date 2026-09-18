@@ -1,0 +1,19 @@
+{
+  "id": "com.evcharging.predictor",
+  "version": "0.1.0",
+  "compatibility": ">=12.4.5",
+  "sdk": 3,
+  "platforms": ["local"],
+  "name": { "en": "EV Charging Predictor" },
+  "description": {
+    "en": "Predicts when your car will depart or arrive, learning from your EV charger's connection state, entirely on-device. Exposes the prediction as Flow cards so your own energy-management Flows can pre-condition EV charging."
+  },
+  "category": ["energy"],
+  "permissions": ["homey:manager:api"],
+  "brandColor": "#2e7d32",
+  "author": { "name": "Wesley", "email": "claude.character006@passmail.net" },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png"
+  }
+}

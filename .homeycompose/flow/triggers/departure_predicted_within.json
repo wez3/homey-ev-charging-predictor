@@ -1,0 +1,17 @@
+{
+  "id": "departure_predicted_within",
+  "title": { "en": "Departure predicted within a time" },
+  "titleFormatted": { "en": "Departure predicted within [[minutes]] minutes" },
+  "hint": {
+    "en": "Fires once when the predicted minutes-until-departure first drops to or below the given value for a newly predicted departure."
+  },
+  "args": [
+    { "type": "device", "name": "device", "filter": "driver_id=ev_charging_predictor" },
+    { "type": "number", "name": "minutes", "title": { "en": "minutes" }, "min": 1, "placeholder": { "en": "60" } }
+  ],
+  "tokens": [
+    { "name": "minutes", "type": "number", "title": { "en": "Minutes until departure" }, "example": 45 },
+    { "name": "confidence", "type": "number", "title": { "en": "Confidence" }, "example": 72 },
+    { "name": "predictedTime", "type": "string", "title": { "en": "Predicted time" }, "example": "07:42" }
+  ]
+}

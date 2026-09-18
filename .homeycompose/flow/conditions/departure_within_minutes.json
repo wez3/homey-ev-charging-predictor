@@ -1,0 +1,9 @@
+{
+  "id": "departure_within_minutes",
+  "title": { "en": "Departure !{{is|isn't}} predicted within a time" },
+  "titleFormatted": { "en": "Departure !{{is|isn't}} predicted within [[minutes]] minutes" },
+  "args": [
+    { "type": "device", "name": "device", "filter": "driver_id=ev_charging_predictor" },
+    { "type": "number", "name": "minutes", "title": { "en": "minutes" }, "min": 1, "placeholder": { "en": "60" } }
+  ]
+}

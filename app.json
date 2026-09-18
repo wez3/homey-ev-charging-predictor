@@ -1,0 +1,497 @@
+{
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "com.evcharging.predictor",
+  "version": "0.1.0",
+  "compatibility": ">=12.4.5",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "EV Charging Predictor"
+  },
+  "description": {
+    "en": "Predicts when your car will depart or arrive, learning from your EV charger's connection state, entirely on-device. Exposes the prediction as Flow cards so your own energy-management Flows can pre-condition EV charging."
+  },
+  "category": [
+    "energy"
+  ],
+  "permissions": [
+    "homey:manager:api"
+  ],
+  "brandColor": "#2e7d32",
+  "author": {
+    "name": "Wesley",
+    "email": "claude.character006@passmail.net"
+  },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png"
+  },
+  "flow": {
+    "triggers": [
+      {
+        "id": "arrival_predicted_within",
+        "title": {
+          "en": "Arrival predicted within a time"
+        },
+        "titleFormatted": {
+          "en": "Arrival predicted within [[minutes]] minutes"
+        },
+        "hint": {
+          "en": "Fires once when the predicted minutes-until-arrival first drops to or below the given value for a newly predicted arrival."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          },
+          {
+            "type": "number",
+            "name": "minutes",
+            "title": {
+              "en": "minutes"
+            },
+            "min": 1,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes until arrival"
+            },
+            "example": 45
+          },
+          {
+            "name": "confidence",
+            "type": "number",
+            "title": {
+              "en": "Confidence"
+            },
+            "example": 72
+          },
+          {
+            "name": "predictedTime",
+            "type": "string",
+            "title": {
+              "en": "Predicted time"
+            },
+            "example": "18:05"
+          }
+        ]
+      },
+      {
+        "id": "departure_predicted_within",
+        "title": {
+          "en": "Departure predicted within a time"
+        },
+        "titleFormatted": {
+          "en": "Departure predicted within [[minutes]] minutes"
+        },
+        "hint": {
+          "en": "Fires once when the predicted minutes-until-departure first drops to or below the given value for a newly predicted departure."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          },
+          {
+            "type": "number",
+            "name": "minutes",
+            "title": {
+              "en": "minutes"
+            },
+            "min": 1,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "name": "minutes",
+            "type": "number",
+            "title": {
+              "en": "Minutes until departure"
+            },
+            "example": 45
+          },
+          {
+            "name": "confidence",
+            "type": "number",
+            "title": {
+              "en": "Confidence"
+            },
+            "example": 72
+          },
+          {
+            "name": "predictedTime",
+            "type": "string",
+            "title": {
+              "en": "Predicted time"
+            },
+            "example": "07:42"
+          }
+        ]
+      },
+      {
+        "id": "prediction_updated",
+        "title": {
+          "en": "A new prediction was calculated"
+        },
+        "hint": {
+          "en": "Fires when the predicted departure or arrival time changes by more than a few minutes from the previous prediction."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "departureTime",
+            "type": "string",
+            "title": {
+              "en": "Predicted departure"
+            },
+            "example": "07:42"
+          },
+          {
+            "name": "departureConfidence",
+            "type": "number",
+            "title": {
+              "en": "Departure confidence"
+            },
+            "example": 72
+          },
+          {
+            "name": "arrivalTime",
+            "type": "string",
+            "title": {
+              "en": "Predicted arrival"
+            },
+            "example": "18:05"
+          },
+          {
+            "name": "arrivalConfidence",
+            "type": "number",
+            "title": {
+              "en": "Arrival confidence"
+            },
+            "example": 55
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "arrival_confidence_above",
+        "title": {
+          "en": "Arrival confidence !{{is|isn't}} above a percentage"
+        },
+        "titleFormatted": {
+          "en": "Arrival confidence !{{is|isn't}} above [[percentage]]%"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          },
+          {
+            "type": "number",
+            "name": "percentage",
+            "title": {
+              "en": "percentage"
+            },
+            "min": 0,
+            "max": 100,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ]
+      },
+      {
+        "id": "arrival_within_minutes",
+        "title": {
+          "en": "Arrival !{{is|isn't}} predicted within a time"
+        },
+        "titleFormatted": {
+          "en": "Arrival !{{is|isn't}} predicted within [[minutes]] minutes"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          },
+          {
+            "type": "number",
+            "name": "minutes",
+            "title": {
+              "en": "minutes"
+            },
+            "min": 1,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ]
+      },
+      {
+        "id": "departure_confidence_above",
+        "title": {
+          "en": "Departure confidence !{{is|isn't}} above a percentage"
+        },
+        "titleFormatted": {
+          "en": "Departure confidence !{{is|isn't}} above [[percentage]]%"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          },
+          {
+            "type": "number",
+            "name": "percentage",
+            "title": {
+              "en": "percentage"
+            },
+            "min": 0,
+            "max": 100,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ]
+      },
+      {
+        "id": "departure_within_minutes",
+        "title": {
+          "en": "Departure !{{is|isn't}} predicted within a time"
+        },
+        "titleFormatted": {
+          "en": "Departure !{{is|isn't}} predicted within [[minutes]] minutes"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          },
+          {
+            "type": "number",
+            "name": "minutes",
+            "title": {
+              "en": "minutes"
+            },
+            "min": 1,
+            "placeholder": {
+              "en": "60"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "drivers": [
+    {
+      "id": "ev_charging_predictor",
+      "name": {
+        "en": "EV Charging Predictor"
+      },
+      "class": "sensor",
+      "platforms": [
+        "local"
+      ],
+      "capabilities": [
+        "car_present",
+        "predicted_departure_time",
+        "predicted_departure_minutes",
+        "predicted_departure_confidence",
+        "predicted_arrival_time",
+        "predicted_arrival_minutes",
+        "predicted_arrival_confidence"
+      ],
+      "images": {
+        "small": "/drivers/ev_charging_predictor/assets/images/small.png",
+        "large": "/drivers/ev_charging_predictor/assets/images/large.png"
+      },
+      "pair": [
+        {
+          "id": "select_device",
+          "navigation": {
+            "next": "list_devices"
+          }
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "options": {
+            "singular": true
+          },
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "repair": [
+        {
+          "id": "select_device"
+        }
+      ],
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "Behavior"
+          },
+          "children": [
+            {
+              "id": "debounceSeconds",
+              "type": "number",
+              "label": {
+                "en": "Debounce (seconds)"
+              },
+              "value": 45,
+              "attr": {
+                "min": 0,
+                "max": 600,
+                "step": 5
+              },
+              "hint": {
+                "en": "How long the connection-state signal must hold steady before a departure/arrival is recorded, to ignore brief flickers."
+              }
+            },
+            {
+              "id": "awayValuesOverride",
+              "type": "text",
+              "label": {
+                "en": "Advanced: custom \"unplugged\" value(s)"
+              },
+              "value": "",
+              "hint": {
+                "en": "Leave empty to use the default (plugged_out). Only needed if your charger app reports a different value for \"unplugged\" - comma-separated if more than one."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "capabilities": {
+    "car_present": {
+      "type": "boolean",
+      "title": {
+        "en": "Car present"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capability/plugged-in.svg"
+    },
+    "predicted_arrival_confidence": {
+      "type": "number",
+      "title": {
+        "en": "Arrival prediction confidence"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "min": 0,
+      "max": 100,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capability/confidence.svg"
+    },
+    "predicted_arrival_minutes": {
+      "type": "number",
+      "title": {
+        "en": "Minutes until arrival"
+      },
+      "units": {
+        "en": "min"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capability/minutes.svg"
+    },
+    "predicted_arrival_time": {
+      "type": "string",
+      "title": {
+        "en": "Predicted arrival"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": false,
+      "icon": "/assets/capability/time.svg"
+    },
+    "predicted_departure_confidence": {
+      "type": "number",
+      "title": {
+        "en": "Departure prediction confidence"
+      },
+      "units": {
+        "en": "%"
+      },
+      "decimals": 0,
+      "min": 0,
+      "max": 100,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capability/confidence.svg"
+    },
+    "predicted_departure_minutes": {
+      "type": "number",
+      "title": {
+        "en": "Minutes until departure"
+      },
+      "units": {
+        "en": "min"
+      },
+      "decimals": 0,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capability/minutes.svg"
+    },
+    "predicted_departure_time": {
+      "type": "string",
+      "title": {
+        "en": "Predicted departure"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": false,
+      "icon": "/assets/capability/time.svg"
+    }
+  }
+}

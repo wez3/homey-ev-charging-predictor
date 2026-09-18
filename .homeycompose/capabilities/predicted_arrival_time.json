@@ -1,0 +1,11 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Predicted arrival"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capability/time.svg"
+}

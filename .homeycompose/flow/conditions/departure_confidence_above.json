@@ -1,0 +1,9 @@
+{
+  "id": "departure_confidence_above",
+  "title": { "en": "Departure confidence !{{is|isn't}} above a percentage" },
+  "titleFormatted": { "en": "Departure confidence !{{is|isn't}} above [[percentage]]%" },
+  "args": [
+    { "type": "device", "name": "device", "filter": "driver_id=ev_charging_predictor" },
+    { "type": "number", "name": "percentage", "title": { "en": "percentage" }, "min": 0, "max": 100, "placeholder": { "en": "60" } }
+  ]
+}

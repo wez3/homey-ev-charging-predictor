@@ -1,0 +1,17 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Arrival prediction confidence"
+  },
+  "units": {
+    "en": "%"
+  },
+  "decimals": 0,
+  "min": 0,
+  "max": 100,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": true,
+  "icon": "/assets/capability/confidence.svg"
+}

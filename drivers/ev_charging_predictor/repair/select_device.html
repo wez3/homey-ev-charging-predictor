@@ -1,0 +1,51 @@
+<script type="application/javascript">
+  Homey.setTitle('Choose a different EV charger');
+
+  let devices = [];
+
+  function renderDevices() {
+    const list = document.getElementById('device-list');
+    list.innerHTML = '';
+    if (devices.length === 0) {
+      list.innerHTML = '<p>No EV chargers found.</p>';
+      return;
+    }
+    devices.forEach((device) => {
+      const item = document.createElement('div');
+      item.className = 'homey-form-group';
+      const button = document.createElement('button');
+      button.className = 'homey-button-secondary-shadow-full';
+      button.textContent = device.zoneName ? `${device.name} (${device.zoneName})` : device.name;
+      button.onclick = () => selectDevice(device);
+      item.appendChild(button);
+      list.appendChild(item);
+    });
+  }
+
+  async function selectDevice(device) {
+    try {
+      await Homey.emit('save_selection', { deviceId: device.id, deviceName: device.name });
+      await Homey.emit('confirm_rebind');
+      Homey.done();
+    } catch (err) {
+      Homey.alert(err.message || String(err));
+    }
+  }
+
+  async function loadDevices() {
+    try {
+      devices = await Homey.emit('get_bindable_devices');
+      renderDevices();
+    } catch (err) {
+      Homey.alert(err.message || String(err));
+    }
+  }
+
+  loadDevices();
+</script>
+
+<fieldset class="homey-form-fieldset">
+  <legend class="homey-form-legend">Choose a different EV charger</legend>
+  <p>Rebind this EV Charging Predictor to a different EV charger.</p>
+  <div id="device-list"><p>Loading chargers...</p></div>
+</fieldset>

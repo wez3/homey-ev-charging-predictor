@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Minutes until departure"
+  },
+  "units": {
+    "en": "min"
+  },
+  "decimals": 0,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": true,
+  "icon": "/assets/capability/minutes.svg"
+}

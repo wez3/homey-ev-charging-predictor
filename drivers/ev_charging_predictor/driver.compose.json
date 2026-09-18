@@ -1,0 +1,50 @@
+{
+  "id": "ev_charging_predictor",
+  "name": { "en": "EV Charging Predictor" },
+  "class": "sensor",
+  "platforms": ["local"],
+  "capabilities": [
+    "car_present",
+    "predicted_departure_time",
+    "predicted_departure_minutes",
+    "predicted_departure_confidence",
+    "predicted_arrival_time",
+    "predicted_arrival_minutes",
+    "predicted_arrival_confidence"
+  ],
+  "images": {
+    "small": "/drivers/ev_charging_predictor/assets/images/small.png",
+    "large": "/drivers/ev_charging_predictor/assets/images/large.png"
+  },
+  "pair": [
+    { "id": "select_device", "navigation": { "next": "list_devices" } },
+    { "id": "list_devices", "template": "list_devices", "options": { "singular": true }, "navigation": { "next": "add_devices" } },
+    { "id": "add_devices", "template": "add_devices" }
+  ],
+  "repair": [
+    { "id": "select_device" }
+  ],
+  "settings": [
+    {
+      "type": "group",
+      "label": { "en": "Behavior" },
+      "children": [
+        {
+          "id": "debounceSeconds",
+          "type": "number",
+          "label": { "en": "Debounce (seconds)" },
+          "value": 45,
+          "attr": { "min": 0, "max": 600, "step": 5 },
+          "hint": { "en": "How long the connection-state signal must hold steady before a departure/arrival is recorded, to ignore brief flickers." }
+        },
+        {
+          "id": "awayValuesOverride",
+          "type": "text",
+          "label": { "en": "Advanced: custom \"unplugged\" value(s)" },
+          "value": "",
+          "hint": { "en": "Leave empty to use the default (plugged_out). Only needed if your charger app reports a different value for \"unplugged\" - comma-separated if more than one." }
+        }
+      ]
+    }
+  ]
+}

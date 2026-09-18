@@ -1,0 +1,17 @@
+{
+  "name": "com.evcharging.predictor",
+  "version": "0.1.0",
+  "main": "app.js",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "test": "node test/predictionModel.test.js && node test/chargerProfiles.test.js"
+  },
+  "dependencies": {
+    "homey-api": "^3.19.2",
+    "ml-random-forest": "^2.1.0"
+  },
+  "devDependencies": {
+    "homey": "^3.7.5"
+  }
+}
