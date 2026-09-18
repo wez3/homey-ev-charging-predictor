@@ -1,0 +1,5 @@
+{
+  "1.0.0": {
+    "en": "First release. Predicts your car's departure and arrival times from your EV charger's connection state, entirely locally, and exposes them as Flow cards for price-aware charging. Easee chargers start with real history straight away, seeded from Homey Insights."
+  }
+}

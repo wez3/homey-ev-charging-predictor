@@ -1,9 +1,8 @@
 {
   "name": "com.evcharging.predictor",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "main": "app.js",
-  "license": "UNLICENSED",
-  "private": true,
+  "license": "MIT",
   "scripts": {
     "test": "node test/predictionModel.test.js && node test/chargerProfiles.test.js"
   },
@@ -13,5 +12,9 @@
   },
   "devDependencies": {
     "homey": "^3.7.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wez3/homey-ev-charging-predictor.git"
   }
 }

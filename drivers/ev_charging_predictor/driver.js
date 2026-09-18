@@ -19,6 +19,10 @@ function describeDevices(rawDevices) {
       id: device.id,
       name: device.name,
       zoneName: (device.zone && device.zone.name) || '',
+      // Whether this charger can be seeded from Insights history, so the user
+      // knows before choosing whether predictions start immediately or after
+      // a few weeks of learning. Only chargers with a verified profile can.
+      hasHistory: ChargerConventions.plugStateSourcesFor(device).length > 0,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 }

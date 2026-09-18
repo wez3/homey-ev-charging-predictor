@@ -18,6 +18,16 @@
       button.textContent = device.zoneName ? `${device.name} (${device.zoneName})` : device.name;
       button.onclick = () => selectDevice(device);
       item.appendChild(button);
+
+      // Set expectations before the choice, not after: a charger without a
+      // history source works fine but predicts nothing for the first weeks.
+      const note = document.createElement('small');
+      note.className = 'homey-text-small-light';
+      note.textContent = device.hasHistory
+        ? 'Past weeks of history available - predicts straight away.'
+        : 'No history available for this charger - it will learn from scratch, so expect a few weeks before predictions appear.';
+      item.appendChild(note);
+
       list.appendChild(item);
     });
   }

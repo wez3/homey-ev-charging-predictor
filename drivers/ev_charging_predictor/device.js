@@ -25,6 +25,11 @@ class EVChargingPredictorDevice extends Homey.Device {
     this._currentInstances = [];
     this._lastPrediction = null;
 
+    // Devices paired before this capability existed don't get it automatically.
+    if (!this.hasCapability('prediction_status')) {
+      await this.addCapability('prediction_status').catch(this.error);
+    }
+
     await this.homey.app.apiReadyPromise;
     await this._clearHistoryPollutedByFixedBugs();
     await this._bindSource();
@@ -282,6 +287,7 @@ class EVChargingPredictorDevice extends Homey.Device {
 
     await this._applyPrediction('departure', departure, now);
     await this._applyPrediction('arrival', arrival, now);
+    await this._applyStatus(departure, arrival);
 
     if (this._hasChangedMaterially(departure, arrival)) {
       this._lastPrediction = { departure, arrival };
@@ -295,6 +301,29 @@ class EVChargingPredictorDevice extends Homey.Device {
 
     await this._maybeFireWithinTrigger('departure', departure, now);
     await this._maybeFireWithinTrigger('arrival', arrival, now);
+  }
+
+  // Without this, a device that has no history yet shows nothing but blank
+  // fields, and the user cannot tell "still learning" from "broken". That is
+  // the normal first experience for any charger without an Insights backfill
+  // source - which, outside Easee, is most of them - so it needs to say so.
+  async _applyStatus(departure, arrival) {
+    const departures = this.model.countEvents('departure');
+    const arrivals = this.model.countEvents('arrival');
+    const recorded = `${departures} departure${departures === 1 ? '' : 's'}, ${arrivals} arrival${arrivals === 1 ? '' : 's'}`;
+
+    let status;
+    if (departures + arrivals === 0) {
+      status = 'Learning - no trips recorded yet';
+    } else if (!departure.predictedTime && !arrival.predictedTime) {
+      status = `Learning - ${recorded} recorded`;
+    } else if (departure.source === 'forest' || arrival.source === 'forest') {
+      status = `Trained model - ${recorded}`;
+    } else {
+      status = `Predicting from ${recorded}`;
+    }
+
+    await this.setCapabilityValue('prediction_status', status).catch(this.error);
   }
 
   _hasChangedMaterially(departure, arrival) {

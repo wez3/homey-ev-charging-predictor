@@ -1,0 +1,15 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Status",
+    "nl": "Status"
+  },
+  "desc": {
+    "en": "Whether enough history has been observed to predict yet, and how much is still needed."
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": false,
+  "icon": "/assets/capability/confidence.svg"
+}

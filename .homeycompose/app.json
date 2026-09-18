@@ -1,19 +1,32 @@
 {
   "id": "com.evcharging.predictor",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "compatibility": ">=12.4.5",
   "sdk": 3,
-  "platforms": ["local"],
-  "name": { "en": "EV Charging Predictor" },
-  "description": {
-    "en": "Predicts when your car will depart or arrive, learning from your EV charger's connection state, entirely on-device. Exposes the prediction as Flow cards so your own energy-management Flows can pre-condition EV charging."
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "EV Charging Predictor"
   },
-  "category": ["energy"],
-  "permissions": ["homey:manager:api"],
+  "description": {
+    "en": "Predicts when your car will depart and arrive by learning from your EV charger's connection state, entirely on your Homey with no cloud calls. Exposes the prediction as Flow cards so your own energy-management Flows can finish charging by the time you leave. Works with any charger exposing Homey's standard EV charging state capability; Easee additionally gets instant history from Homey Insights, so it predicts from day one instead of learning from scratch."
+  },
+  "category": [
+    "energy"
+  ],
+  "permissions": [
+    "homey:manager:api"
+  ],
   "brandColor": "#2e7d32",
-  "author": { "name": "Wesley", "email": "claude.character006@passmail.net" },
+  "author": {
+    "name": "Wesley",
+    "email": "security@forsec.nl"
+  },
   "images": {
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png"
-  }
+  },
+  "source": "https://github.com/wez3/homey-ev-charging-predictor",
+  "support": "https://github.com/wez3/homey-ev-charging-predictor/issues"
 }
