@@ -4,7 +4,7 @@
   "main": "app.js",
   "license": "MIT",
   "scripts": {
-    "test": "node test/predictionModel.test.js && node test/chargerProfiles.test.js"
+    "test": "node test/predictionModel.test.js && node test/chargerProfiles.test.js && TZ=UTC node test/timezone.test.js"
   },
   "dependencies": {
     "homey-api": "^3.19.2",

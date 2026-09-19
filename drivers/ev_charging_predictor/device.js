@@ -17,7 +17,7 @@ const EVENT_SCHEMA_VERSION = 4;
 class EVChargingPredictorDevice extends Homey.Device {
 
   async onInit() {
-    this.model = new PredictionModel(this);
+    this.model = new PredictionModel(this, () => this.homey.clock.getTimezone());
     this._committedPresence = undefined;
     this._debounceTimer = null;
     this._pendingPresence = undefined;
@@ -290,11 +290,12 @@ class EVChargingPredictorDevice extends Homey.Device {
     await this._applyStatus(departure, arrival);
 
     if (this._hasChangedMaterially(departure, arrival)) {
+      const tz = this.homey.clock.getTimezone();
       this._lastPrediction = { departure, arrival };
       this.homey.flow.getDeviceTriggerCard('prediction_updated').trigger(this, {
-        departureTime: departure.predictedTime ? TimeSlots.formatTime(departure.predictedTime) : '',
+        departureTime: departure.predictedTime ? TimeSlots.formatTime(departure.predictedTime, tz) : '',
         departureConfidence: departure.confidence,
-        arrivalTime: arrival.predictedTime ? TimeSlots.formatTime(arrival.predictedTime) : '',
+        arrivalTime: arrival.predictedTime ? TimeSlots.formatTime(arrival.predictedTime, tz) : '',
         arrivalConfidence: arrival.confidence,
       }, {}).catch(this.error);
     }
@@ -341,7 +342,7 @@ class EVChargingPredictorDevice extends Homey.Device {
       ? Math.round((prediction.predictedTime.getTime() - now.getTime()) / 60000)
       : null;
 
-    await this.setCapabilityValue(`${prefix}_time`, prediction.predictedTime ? TimeSlots.formatTime(prediction.predictedTime) : '').catch(this.error);
+    await this.setCapabilityValue(`${prefix}_time`, prediction.predictedTime ? TimeSlots.formatTime(prediction.predictedTime, this.homey.clock.getTimezone()) : '').catch(this.error);
     await this.setCapabilityValue(`${prefix}_minutes`, minutesUntil).catch(this.error);
     await this.setCapabilityValue(`${prefix}_confidence`, prediction.predictedTime ? prediction.confidence : null).catch(this.error);
   }
@@ -355,7 +356,7 @@ class EVChargingPredictorDevice extends Homey.Device {
     await this.homey.flow.getDeviceTriggerCard(cardId).trigger(this, {
       minutes: minutesUntil,
       confidence: prediction.confidence,
-      predictedTime: TimeSlots.formatTime(prediction.predictedTime),
+      predictedTime: TimeSlots.formatTime(prediction.predictedTime, this.homey.clock.getTimezone()),
     }, {
       minutesUntil,
       occurrenceKey: prediction.predictedTime.toISOString(),
