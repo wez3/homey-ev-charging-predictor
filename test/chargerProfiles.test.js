@@ -94,13 +94,66 @@ function run() {
   assert.ok(!ChargerConventions.looksLikeCompletedSessionStillConnected(ohme),
     "Easee's guard values must not be applied to Ohme");
 
-  // --- a charger we cannot read at all is not offered for pairing -----------
+  // --- Zaptec now pairs via its profile's fallback state capability --------
   const zaptec = device({
     driverId: 'homey:app:com.zaptec:go',
     caps: { charge_mode: 'Disconnected', 'measure_current.phase1': 0 },
   });
-  assert.strictEqual(ChargerConventions.resolveStateCapability(zaptec), null,
-    'no readable state capability -> not pairable (until a profile adds one)');
+  const zaptecState = ChargerConventions.resolveStateCapability(zaptec);
+  assert.strictEqual(zaptecState.capabilityId, 'charge_mode',
+    'a profiled charger without the standard capability pairs on its fallback');
+  assert.deepStrictEqual(zaptecState.awayValues, ['Disconnected']);
+  assert.deepStrictEqual(ChargerConventions.plugStateSourcesFor(zaptec), [],
+    'source-derived profiles never backfill (no verified current source)');
+
+  // --- a charger with neither the standard capability nor a profile is not
+  //     offered for pairing --------------------------------------------------
+  const mystery = device({
+    driverId: 'homey:app:com.example.mystery:charger',
+    caps: { some_status: 'idle' },
+  });
+  assert.strictEqual(ChargerConventions.resolveStateCapability(mystery), null,
+    'no readable state capability -> not pairable');
+
+  // --- source-derived fallbacks: string enum and boolean signals -----------
+  const garo = device({
+    driverId: 'homey:app:com.softblockrefinery.garo-charger-meter:glbdc',
+    caps: { connector: 'CHARGING' },
+  });
+  const garoState = ChargerConventions.resolveStateCapability(garo);
+  assert.strictEqual(garoState.capabilityId, 'connector');
+  assert.deepStrictEqual(garoState.awayValues, ['NOT_CONNECTED']);
+
+  const smappee = device({
+    driverId: 'homey:app:com.smappee:ev-wall',
+    caps: { cable_connected: true },
+  });
+  const smappeeState = ChargerConventions.resolveStateCapability(smappee);
+  assert.strictEqual(smappeeState.capabilityId, 'cable_connected');
+  assert.deepStrictEqual(smappeeState.awayValues, [false],
+    'a boolean away value survives as a boolean, not a string');
+  // boolean away matching works end to end: false = away, true = present.
+  assert.strictEqual(ChargerConventions.resolveAwayValues({ awayValues: [false] }).includes(false), true);
+  assert.strictEqual(ChargerConventions.resolveAwayValues({ awayValues: [false] }).includes(true), false);
+
+  // --- Wallbox declares the standard capability but mis-reports plugged_out
+  //     while the cable is attached; the raw `status` guard vetoes the false
+  //     departure, and only a true "Disconnected" is believed ---------------
+  const wallboxIdle = device({
+    driverId: 'homey:app:nl.xseth.wallbox:wallbox',
+    caps: { evcharger_charging_state: 'plugged_out', status: 'Ready' },
+  });
+  assert.strictEqual(ChargerConventions.resolveStateCapability(wallboxIdle).capabilityId,
+    'evcharger_charging_state', 'Wallbox still pairs on the standard capability');
+  assert.ok(ChargerConventions.looksLikeCompletedSessionStillConnected(wallboxIdle),
+    'status "Ready" (connected-idle) must veto a false departure');
+
+  const wallboxGone = device({
+    driverId: 'homey:app:nl.xseth.wallbox:wallbox',
+    caps: { evcharger_charging_state: 'plugged_out', status: 'Disconnected' },
+  });
+  assert.ok(!ChargerConventions.looksLikeCompletedSessionStillConnected(wallboxGone),
+    'status "Disconnected" is a real departure, not vetoed');
 
   // --- awayValues resolution ------------------------------------------------
   assert.deepStrictEqual(ChargerConventions.resolveAwayValues({}), ['plugged_out']);

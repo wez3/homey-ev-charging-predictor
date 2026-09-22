@@ -210,6 +210,26 @@ charger - one step, done.
   device-icon *style* conventions (960x960 viewBox, black stroke-only line art) for
   visual consistency. Free to publish.
 
+## Supported chargers
+
+Any charger app that declares the standard `evcharger_charging_state` pairs and works
+out of the box (about 57% of apps - roughly 20 of the ~35 surveyed). On top of that,
+`lib/ChargerProfiles.js` carries brand profiles for chargers that need help:
+
+- **Full history from day one (Insights backfill + false-departure guard): Easee.**
+  Its idle-current behaviour was verified on real hardware.
+- **Pairs via a vendor capability** (these apps never adopted the standard one):
+  Zaptec, Ohme, Mennekes (AMTRON Modbus), go-e, Smappee, evcc, GARO, KEBA, and generic
+  OCPP 1.6 chargers.
+- **Pairs on the standard capability but gets a guard against a known false-departure
+  bug:** Wallbox (`nl.xseth.wallbox`).
+
+Everything but Easee was derived from each app's public source (see the `source` on each
+profile) and not yet verified on hardware; they start with no history and learn from live
+events. Not yet profiled: ChargeAmps (uses a different capability per model - needs a
+small model change) and amina (closed source). If your charger isn't listed and doesn't
+declare the standard capability, it won't appear in the picker until a profile adds it.
+
 ## Adding another charger
 
 **Pull requests welcome, and they should only ever touch one file:
