@@ -25,6 +25,13 @@ class EVChargingPredictorDevice extends Homey.Device {
     this._currentInstances = [];
     this._lastPrediction = null;
 
+    // Departure-accuracy logging: the forecast we are currently "betting" on
+    // for the next departure, and the last day we already posted a score for
+    // (so we grade only the first departure of each day - the one the model
+    // actually targets). Both persist so a restart doesn't lose or double-log.
+    this._outstandingDeparture = this.getStoreValue('outstandingDeparture') || null;
+    this._lastAccuracyLogDay = this.getStoreValue('lastAccuracyLogDay') || null;
+
     // Devices paired before this capability existed don't get it automatically.
     if (!this.hasCapability('prediction_status')) {
       await this.addCapability('prediction_status').catch(this.error);
@@ -274,6 +281,14 @@ class EVChargingPredictorDevice extends Homey.Device {
 
     const direction = present ? 'arrival' : 'departure';
     const now = new Date();
+
+    // Grade the forecast against reality before recording the event (which,
+    // via the recompute below, replaces the outstanding forecast with the next
+    // day's). Only the first departure of the day is scored.
+    if (direction === 'departure') {
+      await this._maybeLogDepartureAccuracy(now);
+    }
+
     this.model.recordEvent(direction, now);
     this.log(`Committed ${direction} event at ${now.toISOString()}`);
 
@@ -284,6 +299,8 @@ class EVChargingPredictorDevice extends Homey.Device {
     const now = new Date();
     const departure = this.model.predictNext('departure', now);
     const arrival = this.model.predictNext('arrival', now);
+
+    this._trackDepartureOutstanding(departure, now);
 
     await this._applyPrediction('departure', departure, now);
     await this._applyPrediction('arrival', arrival, now);
@@ -304,6 +321,70 @@ class EVChargingPredictorDevice extends Homey.Device {
     await this._maybeFireWithinTrigger('arrival', arrival, now);
   }
 
+  _dayKey(date) {
+    const p = TimeSlots.partsInZone(date, this.homey.clock.getTimezone());
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+
+  // Remembers the departure forecast to grade later. It keeps refreshing while
+  // the forecast is for *today's* departure (so we grade the final morning
+  // forecast, not a stale one), and seeds itself from a forecast for a future
+  // day when nothing is held yet. Crucially it does NOT overwrite a same-day
+  // forecast once "now" has passed the predicted time: predictNext then rolls
+  // to tomorrow, and grading against that rolled-over value would look like a
+  // ~24h miss. All persisted so a restart mid-morning still grades correctly.
+  _trackDepartureOutstanding(prediction, now) {
+    if (!prediction || !prediction.predictedTime) return;
+    const predDay = this._dayKey(prediction.predictedTime);
+    const nowDay = this._dayKey(now);
+    if (predDay !== nowDay && this._outstandingDeparture) return;
+
+    this._outstandingDeparture = {
+      predictedTime: prediction.predictedTime.toISOString(),
+      confidence: prediction.confidence,
+      predictedAt: now.toISOString(),
+    };
+    this.setStoreValue('outstandingDeparture', this._outstandingDeparture).catch(this.error);
+  }
+
+  // On the first departure of the day, post to the timeline how far the
+  // standing forecast was off. Only grades a forecast that was actually about
+  // today, and only once per day.
+  async _maybeLogDepartureAccuracy(actualDate) {
+    const today = this._dayKey(actualDate);
+    if (this._lastAccuracyLogDay === today) return;
+
+    const outstanding = this._outstandingDeparture;
+    if (!outstanding || !outstanding.predictedTime) return;
+
+    const predicted = new Date(outstanding.predictedTime);
+    if (this._dayKey(predicted) !== today) return;
+
+    const tz = this.homey.clock.getTimezone();
+    const errMin = Math.round((predicted.getTime() - actualDate.getTime()) / 60000);
+    const abs = Math.abs(errMin);
+    const verdict = errMin === 0 ? 'precies op tijd' : `${abs} min te ${errMin < 0 ? 'vroeg' : 'laat'}`;
+    const excerpt = `🚗 Vertrekvoorspelling: voorspeld ${TimeSlots.formatTime(predicted, tz)}, `
+      + `werkelijk ${TimeSlots.formatTime(actualDate, tz)} — ${verdict} `
+      + `(betrouwbaarheid ${outstanding.confidence}%)`;
+
+    await this._writeTimeline(excerpt);
+
+    this._lastAccuracyLogDay = today;
+    await this.setStoreValue('lastAccuracyLogDay', today).catch(this.error);
+    this._outstandingDeparture = null;
+    await this.setStoreValue('outstandingDeparture', null).catch(this.error);
+  }
+
+  async _writeTimeline(excerpt) {
+    try {
+      await this.homey.notifications.createNotification({ excerpt });
+      this.log('Timeline:', excerpt);
+    } catch (err) {
+      this.error('Could not write to timeline:', err.message);
+    }
+  }
+
   // Without this, a device that has no history yet shows nothing but blank
   // fields, and the user cannot tell "still learning" from "broken". That is
   // the normal first experience for any charger without an Insights backfill
@@ -311,7 +392,7 @@ class EVChargingPredictorDevice extends Homey.Device {
   async _applyStatus(departure, arrival) {
     const departures = this.model.countEvents('departure');
     const arrivals = this.model.countEvents('arrival');
-    const recorded = `${departures} departure${departures === 1 ? '' : 's'}, ${arrivals} arrival${arrivals === 1 ? '' : 's'}`;
+    const recorded = `${departures} departure day${departures === 1 ? '' : 's'}, ${arrivals} arrival day${arrivals === 1 ? '' : 's'}`;
 
     let status;
     if (departures + arrivals === 0) {
