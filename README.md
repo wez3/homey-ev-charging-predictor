@@ -172,20 +172,23 @@ charger - one step, done.
   with an unrelated meaning where "Completed" means something else, this could
   misbehave for that specific app (falls back to trusting `evcharger_charging_state`
   alone otherwise, so the blast radius is small).
-- Icons follow Athom's own device icon set, shipped inside Homey's firmware at
-  `homey-lib/assets/device/icons` (222 icons) - reused directly where it has something
-  suitable, and drawn in the same style where it doesn't:
-  - `assets/icon.svg` - `car-charger`, the app icon. It is a solid-black line-art
-    silhouette with no background fill, matching the convention confirmed from real
-    installed apps' `icon.svg` files (Tesla, Easee, powerhour): Homey appears to treat
-    this file as a themed mask/glyph rather than a literal full-color image - an
-    earlier attempt filled a colored background circle and rendered as a solid black
-    dot in Homey once deployed.
+- Icons are all original artwork for this project, drawn to follow Athom's own
+  device-icon conventions (from `homey-lib/assets/device/icons`) so they sit
+  alongside the built-in set - none of Athom's assets are copied or shipped:
+  - `assets/icon.svg` - the app icon: a clock face with a lightning bolt in place
+    of its hands (this app predicts the *timing* of charging), drawn from scratch
+    rather than reusing Athom's `car-charger` glyph. Solid-black line art, no
+    background fill, matching the convention confirmed from real installed apps'
+    `icon.svg` files (Tesla, Easee, powerhour): Homey appears to treat this file
+    as a themed mask/glyph rather than a literal full-color image - an earlier
+    attempt filled a colored background circle and rendered as a solid black dot
+    in Homey once deployed.
   - `assets/capability/` - per-capability icons: `time` (plain clock) for the predicted
     times, `minutes` (stopwatch) for the minutes-until values,
     `confidence` (gauge with a needle) for the confidence percentages, and
-    `plugged-in` (Athom's `car-charger`) for `car_present`. The first three are drawn
-    here rather than reused: Homey ships only two clocks, both stylised (a framed wall
+    `plugged-in` for `car_present` (the same original clock-and-bolt glyph as the
+    app icon, reused). All are drawn here rather than reused: Homey ships only two
+    clocks, both stylised (a framed wall
     clock and a mantel clock), nothing plain, and nothing gauge-like at all for a
     confidence percentage. They follow the same conventions as Athom's set - 960x960
     viewBox, black stroke-only line art - so they sit alongside it consistently, and
@@ -196,17 +199,16 @@ charger - one step, done.
     the app icon rasterised in brand green onto a genuinely transparent RGBA
     background (rendered at 4x and downsampled, since thin line art aliases badly at
     75px), matching how real driver/app images float on transparency rather than being
-    flat colored rectangles. At 75x75 the charger outline is still fairly dense - that
-    icon simply carries more detail than that thumbnail size resolves.
-  - `drivers/ev_charging_predictor/assets/icon.svg` - the same car-charger. Note the
-    official CLI template only scaffolds an app-level `icon.svg`, and neither Tesla's
-    nor Easee's app ships a driver-level one, so Homey may well ignore it; the device
-    tile is driven by the driver's PNGs regardless.
+    flat colored rectangles. Regenerated from the original `icon.svg` above.
+  - `drivers/ev_charging_predictor/assets/icon.svg` - the same original app icon
+    (clock-and-bolt). Note the official CLI template only scaffolds an app-level
+    `icon.svg`, and neither Tesla's nor Easee's app ships a driver-level one, so
+    Homey may well ignore it; the device tile is driven by the driver's PNGs regardless.
 
-  **Licensing:** the app icon and `plugged-in` are Athom's own assets, copied out of
-  `homey-lib` (the clock, stopwatch and gauge are drawn here, so those are unencumbered).
-  Fine for personal use on your own Homey; worth resolving before publishing this app
-  anywhere public.
+  **Licensing:** every icon and image is original artwork for this project - nothing
+  from `homey-lib` or any other app is copied or shipped. They only follow Athom's
+  device-icon *style* conventions (960x960 viewBox, black stroke-only line art) for
+  visual consistency. Free to publish.
 
 ## Adding another charger
 
