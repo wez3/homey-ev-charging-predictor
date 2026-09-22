@@ -166,6 +166,21 @@ function run() {
     ['a', 'b'], 'the user override still wins',
   );
 
+  // --- verification flags track what has been confirmed on hardware --------
+  const byId = Object.fromEntries(ChargerProfiles.PROFILES.map((p) => [p.id, p]));
+  assert.strictEqual(byId.easee.stateVerified, true, 'Easee is hardware-verified');
+  assert.strictEqual(byId.easee.backfillVerified, true, 'Easee backfill is hardware-verified');
+  assert.strictEqual(byId.zaptec.stateVerified, false, 'source-derived profiles start unverified');
+  for (const p of ChargerProfiles.PROFILES) {
+    assert.strictEqual(typeof p.stateVerified, 'boolean', `${p.id} declares stateVerified`);
+    assert.strictEqual(typeof p.backfillVerified, 'boolean', `${p.id} declares backfillVerified`);
+    // A profile may only claim a verified backfill if it actually ships currentSources.
+    if (p.backfillVerified) {
+      assert.ok(Array.isArray(p.currentSources) && p.currentSources.length > 0,
+        `${p.id} claims backfillVerified but has no currentSources`);
+    }
+  }
+
   console.log('OK: brand profiles preserve Easee, fail safe elsewhere, and do not cross-misfire.');
 }
 
