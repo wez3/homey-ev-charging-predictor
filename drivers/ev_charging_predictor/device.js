@@ -392,7 +392,8 @@ class EVChargingPredictorDevice extends Homey.Device {
   async _applyStatus(departure, arrival) {
     const departures = this.model.countEvents('departure');
     const arrivals = this.model.countEvents('arrival');
-    const recorded = `${departures} departure day${departures === 1 ? '' : 's'}, ${arrivals} arrival day${arrivals === 1 ? '' : 's'}`;
+    const days = Math.max(departures, arrivals);
+    const recorded = `${days} day${days === 1 ? '' : 's'}`;
 
     let status;
     if (departures + arrivals === 0) {
