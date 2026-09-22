@@ -14,6 +14,14 @@ const PREDICTION_CHANGE_THRESHOLD_MS = 5 * 60 * 1000;
 // how an already-installed device picks up a better backfill source.
 const EVENT_SCHEMA_VERSION = 4;
 
+// Passive, user-invisible data collection for a future "charge-need" feature:
+// at each committed plug event we snapshot the charger's own cumulative energy
+// meter (kWh). Charger-only - no car/SoC dependency - and kept in its own store
+// key so the prediction pipeline and its schema version are left untouched.
+// Nothing reads it yet; it just accrues history so v2 can be built on real data.
+const METER_CAPABILITY_ID = 'meter_power';
+const ENERGY_LOG_MAX = 400; // ~ a year at two events a day; bounds store size
+
 class EVChargingPredictorDevice extends Homey.Device {
 
   async onInit() {
@@ -292,7 +300,34 @@ class EVChargingPredictorDevice extends Homey.Device {
     this.model.recordEvent(direction, now);
     this.log(`Committed ${direction} event at ${now.toISOString()}`);
 
+    await this._recordEnergySnapshot(direction, now);
+
     await this.recomputePredictions();
+  }
+
+  // Passive data collection for a future charge-need feature (see the constants
+  // above). Snapshots the charger's cumulative energy meter at each plug event
+  // into a standalone log, raw. From consecutive snapshots you can later derive
+  // the energy charged per session; storing the raw cumulative value rather than
+  // a delta keeps meter resets and gaps fixable later. Never fabricates - no
+  // meter capability means null. Deliberately independent of the prediction
+  // event store, so it can't affect learning and needs no schema-version bump
+  // (which would wipe history). Nothing reads this yet.
+  async _recordEnergySnapshot(direction, when) {
+    try {
+      const log = this.getStoreValue('energyLog') || [];
+      log.push({ t: when.toISOString(), direction, meterKwh: this._readMeterKwh() });
+      while (log.length > ENERGY_LOG_MAX) log.shift();
+      await this.setStoreValue('energyLog', log);
+    } catch (err) {
+      this.error('Could not record energy snapshot:', err.message);
+    }
+  }
+
+  _readMeterKwh() {
+    const caps = this.sourceDevice && this.sourceDevice.capabilitiesObj;
+    const cap = caps && caps[METER_CAPABILITY_ID];
+    return cap && typeof cap.value === 'number' ? cap.value : null;
   }
 
   async recomputePredictions() {
