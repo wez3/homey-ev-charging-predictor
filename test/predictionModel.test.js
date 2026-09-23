@@ -4,8 +4,7 @@
  * Lightweight sanity check, run with `npm test`. Not a Homey app test - it
  * fakes just enough of the Device store API for PredictionModel to run
  * standalone, and seeds a synthetic "always leaves at 07:30 on weekdays"
- * history to confirm both the KDE fallback and the trained forest converge
- * on a sane prediction.
+ * history to confirm the KDE converges on a sane prediction.
  */
 
 const assert = require('assert');

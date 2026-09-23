@@ -435,8 +435,6 @@ class EVChargingPredictorDevice extends Homey.Device {
       status = 'Learning - no trips recorded yet';
     } else if (!departure.predictedTime && !arrival.predictedTime) {
       status = `Learning - ${recorded} recorded`;
-    } else if (departure.source === 'forest' || arrival.source === 'forest') {
-      status = `Trained model - ${recorded}`;
     } else {
       status = `Predicting from ${recorded}`;
     }

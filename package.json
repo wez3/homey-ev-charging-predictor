@@ -7,8 +7,7 @@
     "test": "node test/predictionModel.test.js && node test/chargerProfiles.test.js && TZ=UTC node test/timezone.test.js"
   },
   "dependencies": {
-    "homey-api": "^3.19.2",
-    "ml-random-forest": "^2.1.0"
+    "homey-api": "^3.19.2"
   },
   "devDependencies": {
     "homey": "^3.7.5"

@@ -92,10 +92,13 @@ it plugged in and available to charge."
    half-life), and a weekday borrows from its neighbours (0.35) and more weakly from
    other days of the same type - workday or weekend (0.2), because two weeks of history
    is only *one* observation per weekday and commutes are shaped more by "workday vs
-   weekend" than by which workday it is. Once at least ~20 events are recorded for a
-   direction, the app switches to a small trained **Random Forest regression** model
-   (`ml-random-forest`), which typically predicts better once there's enough history -
-   tree ensembles outperform neural nets on this kind of small, periodic tabular data.
+   weekend" than by which workday it is.
+
+   An earlier version switched to a trained Random Forest once ~20 days were recorded.
+   It was removed after a walk-forward simulation (14 weeks, three schedule types)
+   showed it was consistently *less* accurate than the KDE on workdays - e.g. 82% vs
+   93% of predictions within 15 minutes for a regular commuter. With one training row
+   per day and little signal in its features, it mostly fit noise.
 5. Predicted times and confidence are exposed as device capabilities, plus Flow
    trigger/condition cards you can wire into your own charging automations.
 
@@ -145,15 +148,15 @@ charger - one step, done.
 - `lib/ChargerConventions.js` - the standard capability id (`evcharger_charging_state`),
   default "unplugged" value (`plugged_out`), the per-device settings override, and the
   `charger_status` "session completed" refinement.
-- `lib/PredictionModel.js` - orchestrates the KDE fallback vs. trained forest.
-- `lib/FallbackKDEModel.js`, `lib/ForestModel.js`, `lib/FeatureEncoder.js` - the two
-  prediction backends and the feature engineering between them.
+- `lib/PredictionModel.js` - stores events and turns them into the next predicted
+  departure/arrival.
+- `lib/FallbackKDEModel.js` - the KDE that does the actual prediction.
 - `lib/TimeSlots.js` - local time-of-day/weekday helpers.
 - `lib/InsightsBackfill.js`, `lib/EdgeDetector.js` - one-time backfill from Homey's own
   Insights history for the bound capability, if any exists, plus the shared
   transition-detection logic used by both the backfill pass and live updates.
 - `test/predictionModel.test.js` - run with `npm test`; seeds a synthetic history and
-  checks both the cold-start KDE path and the trained-forest path converge sensibly.
+  checks the KDE converges sensibly and that confidence tracks consistency.
 
 ## Known open items (see the implementation plan for detail)
 
