@@ -398,7 +398,12 @@ class EVChargingPredictorDevice extends Homey.Device {
     const tz = this.homey.clock.getTimezone();
     const errMin = Math.round((predicted.getTime() - actualDate.getTime()) / 60000);
     const abs = Math.abs(errMin);
-    const verdict = errMin === 0 ? 'precies op tijd' : `${abs} min te ${errMin < 0 ? 'vroeg' : 'laat'}`;
+    // Phrased from the driver's side ("vertrokken ... dan voorspeld"): "30 min
+    // te laat" was ambiguous and read as the car leaving late when it had in
+    // fact left 30 min before the forecast.
+    const verdict = errMin === 0
+      ? 'precies op tijd'
+      : `${abs} min ${errMin > 0 ? 'eerder' : 'later'} vertrokken dan voorspeld`;
     const excerpt = `🚗 Vertrekvoorspelling: voorspeld ${TimeSlots.formatTime(predicted, tz)}, `
       + `werkelijk ${TimeSlots.formatTime(actualDate, tz)} — ${verdict} `
       + `(betrouwbaarheid ${outstanding.confidence}%)`;
