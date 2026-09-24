@@ -4,5 +4,8 @@
   },
   "1.4.0": {
     "en": "New: predicts how many kWh your car will need tomorrow, learned from your charger's own energy meter and seeded from Homey Insights so it shows real numbers from the start. It learns your weekly pattern (a commuting day reads higher than a quiet weekend) and comes with a low/high band. Available as a capability, a Flow condition (daily need above X kWh) and a trigger, so your energy Flows can size a charge or skip the plan when the car barely needs a top-up. Once a day is over, the timeline shows how the prediction compared with what the car actually used."
+  },
+  "1.4.1": {
+    "en": "Fix upload"
   }
 }
