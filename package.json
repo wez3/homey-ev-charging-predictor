@@ -1,10 +1,10 @@
 {
   "name": "com.evcharging.predictor",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "main": "app.js",
   "license": "MIT",
   "scripts": {
-    "test": "node test/predictionModel.test.js && node test/chargerProfiles.test.js && TZ=UTC node test/timezone.test.js"
+    "test": "node test/predictionModel.test.js && node test/dailyEnergyModel.test.js && node test/chargerProfiles.test.js && TZ=UTC node test/timezone.test.js"
   },
   "dependencies": {
     "homey-api": "^3.19.2"

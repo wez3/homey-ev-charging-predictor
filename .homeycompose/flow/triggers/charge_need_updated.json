@@ -1,0 +1,16 @@
+{
+  "id": "charge_need_updated",
+  "title": { "en": "The predicted daily charge need changed" },
+  "hint": {
+    "en": "Fires when the expected energy the car needs on the coming day changes by at least 0.5 kWh. The estimate is conditioned on that day's weekday, so weekly patterns show. The tokens include a low/high band (10th-90th percentile) you can use as a safety margin in energy Flows."
+  },
+  "args": [
+    { "type": "device", "name": "device", "filter": "driver_id=ev_charging_predictor" }
+  ],
+  "tokens": [
+    { "name": "expectedKwh", "type": "number", "title": { "en": "Expected daily need (kWh)" }, "example": 11.4 },
+    { "name": "lowKwh", "type": "number", "title": { "en": "Low estimate (kWh)" }, "example": 4.2 },
+    { "name": "highKwh", "type": "number", "title": { "en": "High estimate (kWh)" }, "example": 22.8 },
+    { "name": "confidence", "type": "number", "title": { "en": "Confidence" }, "example": 63 }
+  ]
+}

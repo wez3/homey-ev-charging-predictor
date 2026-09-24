@@ -65,6 +65,8 @@ class EVChargingPredictorDriver extends Homey.Driver {
       .registerRunListener((args) => this._checkConfidenceAbove(args, 'predicted_departure_confidence'));
     this.homey.flow.getConditionCard('arrival_confidence_above')
       .registerRunListener((args) => this._checkConfidenceAbove(args, 'predicted_arrival_confidence'));
+    this.homey.flow.getConditionCard('charge_need_above')
+      .registerRunListener((args) => this._checkChargeNeedAbove(args));
   }
 
   // state: { minutesUntil, occurrenceKey } set by device.js when it triggers this card.
@@ -91,6 +93,11 @@ class EVChargingPredictorDriver extends Homey.Driver {
   _checkConfidenceAbove(args, capabilityId) {
     const value = args.device.getCapabilityValue(capabilityId);
     return value != null && value > args.percentage;
+  }
+
+  _checkChargeNeedAbove(args) {
+    const value = args.device.getCapabilityValue('predicted_charge_kwh');
+    return value != null && value > args.kwh;
   }
 
   async onPair(session) {

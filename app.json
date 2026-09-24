@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.evcharging.predictor",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "platforms": [
@@ -85,6 +85,56 @@
               "en": "Predicted time"
             },
             "example": "18:05"
+          }
+        ]
+      },
+      {
+        "id": "charge_need_updated",
+        "title": {
+          "en": "The predicted daily charge need changed"
+        },
+        "hint": {
+          "en": "Fires when the expected energy the car needs on the coming day changes by at least 0.5 kWh. The estimate is conditioned on that day's weekday, so weekly patterns show. The tokens include a low/high band (10th-90th percentile) you can use as a safety margin in energy Flows."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          }
+        ],
+        "tokens": [
+          {
+            "name": "expectedKwh",
+            "type": "number",
+            "title": {
+              "en": "Expected daily need (kWh)"
+            },
+            "example": 11.4
+          },
+          {
+            "name": "lowKwh",
+            "type": "number",
+            "title": {
+              "en": "Low estimate (kWh)"
+            },
+            "example": 4.2
+          },
+          {
+            "name": "highKwh",
+            "type": "number",
+            "title": {
+              "en": "High estimate (kWh)"
+            },
+            "example": 22.8
+          },
+          {
+            "name": "confidence",
+            "type": "number",
+            "title": {
+              "en": "Confidence"
+            },
+            "example": 63
           }
         ]
       },
@@ -252,6 +302,37 @@
         ]
       },
       {
+        "id": "charge_need_above",
+        "title": {
+          "en": "Predicted daily charge need !{{is|isn't}} above an amount"
+        },
+        "titleFormatted": {
+          "en": "Predicted daily charge need !{{is|isn't}} above [[kwh]] kWh"
+        },
+        "hint": {
+          "en": "True when the expected energy the car will need on the coming day (conditioned on its weekday) is above the given number of kWh. Use it to skip a smart-charging plan on days it barely needs a top-up."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=ev_charging_predictor"
+          },
+          {
+            "type": "number",
+            "name": "kwh",
+            "title": {
+              "en": "kWh"
+            },
+            "min": 0,
+            "step": 0.5,
+            "placeholder": {
+              "en": "10"
+            }
+          }
+        ]
+      },
+      {
         "id": "departure_confidence_above",
         "title": {
           "en": "Departure confidence !{{is|isn't}} above a percentage"
@@ -326,7 +407,8 @@
         "predicted_departure_confidence",
         "predicted_arrival_time",
         "predicted_arrival_minutes",
-        "predicted_arrival_confidence"
+        "predicted_arrival_confidence",
+        "predicted_charge_kwh"
       ],
       "images": {
         "small": "/drivers/ev_charging_predictor/assets/images/small.png",
@@ -452,6 +534,21 @@
       "uiComponent": "sensor",
       "insights": false,
       "icon": "/assets/capability/time.svg"
+    },
+    "predicted_charge_kwh": {
+      "type": "number",
+      "title": {
+        "en": "Predicted daily charge need"
+      },
+      "units": {
+        "en": "kWh"
+      },
+      "decimals": 1,
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "insights": true,
+      "icon": "/assets/capability/energy.svg"
     },
     "predicted_departure_confidence": {
       "type": "number",

@@ -102,6 +102,26 @@ it plugged in and available to charge."
 5. Predicted times and confidence are exposed as device capabilities, plus Flow
    trigger/condition cards you can wire into your own charging automations.
 
+6. **Daily charge need.** Separately from the time predictions, the app predicts how
+   many kWh the car will need *tomorrow*, from the charger's own cumulative energy
+   meter (`meter_power`). It keeps one reading per calendar day (the latest wins), so
+   a day's energy is simply the rise in the meter across it. Per day rather than per
+   plug-in session on purpose: a home charger is often left connected for days and
+   tops up in bursts on cheap hours, which makes "energy per session" an unstable
+   unit, while energy per day is exactly what a day-ahead plan needs.
+
+   The estimate is a recency-weighted median (30-day half-life) with a 10th-90th
+   percentile band, conditioned on tomorrow's weekday: that weekday's own history is
+   blended with the all-days estimate, leaning on the weekday once it has a few days
+   of data. Days that follow a gap, or where the meter went backwards or rose
+   implausibly (> 150 kWh), are dropped rather than guessed. On first init the log is
+   seeded once from the meter's Insights history, so it shows real numbers straight
+   away. It's exposed as the `predicted_charge_kwh` capability, a *"daily charge need
+   above X kWh"* condition and a *"daily charge need changed"* trigger (fires on a
+   move of at least 0.5 kWh, with low/high band tokens). Once a day is over, the
+   timeline shows how the prediction compared with what was actually used. Chargers
+   without a cumulative `meter_power` simply show no value.
+
 **What confidence means.** It is the product of how much history backs the prediction
 and how *concentrated* that history is around the predicted time - the share of the
 weighted samples that land near it, and how tightly they cluster. It used to count
@@ -155,8 +175,11 @@ charger - one step, done.
 - `lib/InsightsBackfill.js`, `lib/EdgeDetector.js` - one-time backfill from Homey's own
   Insights history for the bound capability, if any exists, plus the shared
   transition-detection logic used by both the backfill pass and live updates.
-- `test/predictionModel.test.js` - run with `npm test`; seeds a synthetic history and
-  checks the KDE converges sensibly and that confidence tracks consistency.
+- `lib/DailyEnergyModel.js`, `lib/DailyEnergyBackfill.js` - the daily charge-need
+  prediction from the charger's cumulative meter, and its one-time Insights seed.
+- `test/` - run with `npm test`; `predictionModel.test.js` seeds a synthetic history and
+  checks the KDE converges sensibly and that confidence tracks consistency, and
+  `dailyEnergyModel.test.js` covers the daily charge-need model.
 
 ## Known open items (see the implementation plan for detail)
 

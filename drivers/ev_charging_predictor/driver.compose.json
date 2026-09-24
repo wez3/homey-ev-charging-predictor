@@ -15,7 +15,8 @@
     "predicted_departure_confidence",
     "predicted_arrival_time",
     "predicted_arrival_minutes",
-    "predicted_arrival_confidence"
+    "predicted_arrival_confidence",
+    "predicted_charge_kwh"
   ],
   "images": {
     "small": "/drivers/ev_charging_predictor/assets/images/small.png",

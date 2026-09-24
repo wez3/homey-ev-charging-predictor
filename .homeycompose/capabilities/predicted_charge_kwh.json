@@ -1,0 +1,15 @@
+{
+  "type": "number",
+  "title": {
+    "en": "Predicted daily charge need"
+  },
+  "units": {
+    "en": "kWh"
+  },
+  "decimals": 1,
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor",
+  "insights": true,
+  "icon": "/assets/capability/energy.svg"
+}

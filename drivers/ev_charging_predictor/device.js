@@ -5,6 +5,8 @@ const PredictionModel = require('../../lib/PredictionModel');
 const TimeSlots = require('../../lib/TimeSlots');
 const InsightsBackfill = require('../../lib/InsightsBackfill');
 const ChargerConventions = require('../../lib/ChargerConventions');
+const DailyEnergyModel = require('../../lib/DailyEnergyModel');
+const DailyEnergyBackfill = require('../../lib/DailyEnergyBackfill');
 
 const DEFAULT_DEBOUNCE_SECONDS = 45;
 const RECOMPUTE_INTERVAL_MS = 5 * 60 * 1000;
@@ -14,13 +16,14 @@ const PREDICTION_CHANGE_THRESHOLD_MS = 5 * 60 * 1000;
 // how an already-installed device picks up a better backfill source.
 const EVENT_SCHEMA_VERSION = 4;
 
-// Passive, user-invisible data collection for a future "charge-need" feature:
-// at each committed plug event we snapshot the charger's own cumulative energy
-// meter (kWh). Charger-only - no car/SoC dependency - and kept in its own store
-// key so the prediction pipeline and its schema version are left untouched.
-// Nothing reads it yet; it just accrues history so v2 can be built on real data.
+// We keep a log of the charger's own cumulative energy meter (kWh), one
+// reading per calendar day (the latest of that day winning), in its own store
+// key `meterDayLog`. DailyEnergyModel turns consecutive days' readings into
+// per-day energy totals to predict a typical day's charge need. Charger-only -
+// no car/SoC dependency - and independent of the departure/arrival event store
+// and its schema version, so it can't affect the time models.
 const METER_CAPABILITY_ID = 'meter_power';
-const ENERGY_LOG_MAX = 400; // ~ a year at two events a day; bounds store size
+const METER_DAY_LOG_MAX = 400; // > a year of daily readings; bounds store size
 
 class EVChargingPredictorDevice extends Homey.Device {
 
@@ -32,6 +35,7 @@ class EVChargingPredictorDevice extends Homey.Device {
     this._guardInstances = [];
     this._currentInstances = [];
     this._lastPrediction = null;
+    this._lastChargeNeed = null;
 
     // Departure-accuracy logging: the forecast we are currently "betting" on
     // for the next departure, and the last day we already posted a score for
@@ -40,15 +44,20 @@ class EVChargingPredictorDevice extends Homey.Device {
     this._outstandingDeparture = this.getStoreValue('outstandingDeparture') || null;
     this._lastAccuracyLogDay = this.getStoreValue('lastAccuracyLogDay') || null;
 
-    // Devices paired before this capability existed don't get it automatically.
+    // Devices paired before these capabilities existed don't get them automatically.
     if (!this.hasCapability('prediction_status')) {
       await this.addCapability('prediction_status').catch(this.error);
+    }
+    if (!this.hasCapability('predicted_charge_kwh')) {
+      await this.addCapability('predicted_charge_kwh').catch(this.error);
     }
 
     await this.homey.app.apiReadyPromise;
     await this._clearHistoryPollutedByFixedBugs();
     await this._bindSource();
     await this._maybeBackfillFromInsights();
+    await this._maybeBackfillDailyEnergy();
+    await this._upsertMeterDay(new Date());
 
     this._recomputeInterval = this.homey.setInterval(async () => {
       await this._pollCurrentState();
@@ -300,28 +309,58 @@ class EVChargingPredictorDevice extends Homey.Device {
     this.model.recordEvent(direction, now);
     this.log(`Committed ${direction} event at ${now.toISOString()}`);
 
-    await this._recordEnergySnapshot(direction, now);
-
     await this.recomputePredictions();
   }
 
-  // Passive data collection for a future charge-need feature (see the constants
-  // above). Snapshots the charger's cumulative energy meter at each plug event
-  // into a standalone log, raw. From consecutive snapshots you can later derive
-  // the energy charged per session; storing the raw cumulative value rather than
-  // a delta keeps meter resets and gaps fixable later. Never fabricates - no
-  // meter capability means null. Deliberately independent of the prediction
-  // event store, so it can't affect learning and needs no schema-version bump
-  // (which would wipe history). Nothing reads this yet.
-  async _recordEnergySnapshot(direction, when) {
+  // One-time, best-effort: seed the daily-energy history from Homey Insights'
+  // record of the charger's cumulative meter, so the kWh prediction starts with
+  // real per-day totals instead of a single reading. No-ops once done, and
+  // no-ops harmlessly if Insights has no usable meter history. Merges under any
+  // days already logged live, so re-running never overwrites fresher readings.
+  async _maybeBackfillDailyEnergy() {
+    if (this.getStoreValue('dailyEnergyBackfilled')) return;
+
+    const settings = this.getSettings();
     try {
-      const log = this.getStoreValue('energyLog') || [];
-      log.push({ t: when.toISOString(), direction, meterKwh: this._readMeterKwh() });
-      while (log.length > ENERGY_LOG_MAX) log.shift();
-      await this.setStoreValue('energyLog', log);
+      const { readings, resolution, days } = await DailyEnergyBackfill.backfillDailyReadings(
+        this.homey.app.api,
+        { deviceId: settings.homeyDeviceId, timeZone: this.homey.clock.getTimezone() },
+      );
+      if (readings.length > 0) {
+        await this._mergeMeterDays(readings);
+        this.log(`Backfilled ${days} daily meter readings from Insights (${resolution}).`);
+      }
     } catch (err) {
-      this.error('Could not record energy snapshot:', err.message);
+      this.error('Daily-energy backfill failed, continuing without it:', err.message);
+    } finally {
+      await this.setStoreValue('dailyEnergyBackfilled', true).catch(this.error);
     }
+  }
+
+  // Records the current cumulative meter as today's reading (latest of the day
+  // wins), so a completed day holds its end-of-day total. Called on every
+  // recompute and at init - cheap and idempotent. No meter capability, or no
+  // reading yet, means there's simply nothing to record.
+  async _upsertMeterDay(when) {
+    const meterKwh = this._readMeterKwh();
+    if (typeof meterKwh !== 'number') return;
+    const day = TimeSlots.dayKey(when, this.homey.clock.getTimezone());
+    await this._mergeMeterDays([{ day, meterKwh }]);
+  }
+
+  // Merge readings into the stored per-day log, keeping one entry per day (the
+  // incoming value wins on a collision, as it's the fresher reading), sorted
+  // oldest-first and bounded in size. Self-contained: reads, merges and persists
+  // in one awaited step so concurrent callers don't clobber each other.
+  async _mergeMeterDays(readings) {
+    const byDay = new Map();
+    for (const e of this.getStoreValue('meterDayLog') || []) byDay.set(e.day, e.meterKwh);
+    for (const e of readings) byDay.set(e.day, e.meterKwh);
+    let merged = [...byDay.entries()]
+      .map(([day, meterKwh]) => ({ day, meterKwh }))
+      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+    if (merged.length > METER_DAY_LOG_MAX) merged = merged.slice(merged.length - METER_DAY_LOG_MAX);
+    await this.setStoreValue('meterDayLog', merged);
   }
 
   _readMeterKwh() {
@@ -332,6 +371,7 @@ class EVChargingPredictorDevice extends Homey.Device {
 
   async recomputePredictions() {
     const now = new Date();
+    await this._upsertMeterDay(now);
     const departure = this.model.predictNext('departure', now);
     const arrival = this.model.predictNext('arrival', now);
 
@@ -339,6 +379,7 @@ class EVChargingPredictorDevice extends Homey.Device {
 
     await this._applyPrediction('departure', departure, now);
     await this._applyPrediction('arrival', arrival, now);
+    await this._applyChargeNeed(now);
     await this._applyStatus(departure, arrival);
 
     if (this._hasChangedMaterially(departure, arrival)) {
@@ -398,15 +439,15 @@ class EVChargingPredictorDevice extends Homey.Device {
     const tz = this.homey.clock.getTimezone();
     const errMin = Math.round((predicted.getTime() - actualDate.getTime()) / 60000);
     const abs = Math.abs(errMin);
-    // Phrased from the driver's side ("vertrokken ... dan voorspeld"): "30 min
-    // te laat" was ambiguous and read as the car leaving late when it had in
-    // fact left 30 min before the forecast.
+    // Phrased from the driver's side ("left ... than predicted"): "30 min too
+    // late" was ambiguous and read as the car leaving late when it had in fact
+    // left 30 min before the forecast.
     const verdict = errMin === 0
-      ? 'precies op tijd'
-      : `${abs} min ${errMin > 0 ? 'eerder' : 'later'} vertrokken dan voorspeld`;
-    const excerpt = `🚗 Vertrekvoorspelling: voorspeld ${TimeSlots.formatTime(predicted, tz)}, `
-      + `werkelijk ${TimeSlots.formatTime(actualDate, tz)} — ${verdict} `
-      + `(betrouwbaarheid ${outstanding.confidence}%)`;
+      ? 'spot on'
+      : `left ${abs} min ${errMin > 0 ? 'earlier' : 'later'} than predicted`;
+    const excerpt = `🚗 Departure prediction: predicted ${TimeSlots.formatTime(predicted, tz)}, `
+      + `actual ${TimeSlots.formatTime(actualDate, tz)} — ${verdict} `
+      + `(confidence ${outstanding.confidence}%)`;
 
     await this._writeTimeline(excerpt);
 
@@ -465,6 +506,111 @@ class EVChargingPredictorDevice extends Homey.Device {
     await this.setCapabilityValue(`${prefix}_time`, prediction.predictedTime ? TimeSlots.formatTime(prediction.predictedTime, this.homey.clock.getTimezone()) : '').catch(this.error);
     await this.setCapabilityValue(`${prefix}_minutes`, minutesUntil).catch(this.error);
     await this.setCapabilityValue(`${prefix}_confidence`, prediction.predictedTime ? prediction.confidence : null).catch(this.error);
+  }
+
+  // Predicts the coming day's energy need from the per-day meter log,
+  // conditioned on that day's weekday so weekly patterns show, publishes the
+  // point estimate on its capability, and fires the Flow trigger (with a
+  // low/high band) when it moves enough to matter. Null when there's no usable
+  // daily history yet. Targets tomorrow - the day tonight's charging is planned
+  // for.
+  async _applyChargeNeed(now) {
+    const timeZone = this.homey.clock.getTimezone();
+    const chargeNeed = DailyEnergyModel.predict(
+      this.getStoreValue('meterDayLog') || [],
+      now,
+      { timeZone, targetWeekday: TimeSlots.weekdayOnDayOffset(now, 1, timeZone) },
+    );
+
+    await this.setCapabilityValue(
+      'predicted_charge_kwh',
+      chargeNeed.source === 'none' ? null : chargeNeed.expectedKwh,
+    ).catch(this.error);
+
+    if (this._chargeNeedChangedMaterially(chargeNeed)) {
+      this._lastChargeNeed = chargeNeed;
+      this.homey.flow.getDeviceTriggerCard('charge_need_updated').trigger(this, {
+        expectedKwh: chargeNeed.expectedKwh,
+        lowKwh: chargeNeed.lowKwh,
+        highKwh: chargeNeed.highKwh,
+        confidence: chargeNeed.confidence,
+      }, {}).catch(this.error);
+    }
+
+    await this._gradeAndTrackChargeNeed(now, chargeNeed);
+  }
+
+  // Remembers the forecast we're showing for tomorrow, then, once a forecast's
+  // day has completed and its actual energy is known, posts to the timeline how
+  // close it was - the kWh counterpart of the departure-accuracy note. Forecasts
+  // are kept per day in a small store list so the day we're waiting to grade and
+  // the next day we're already forecasting don't overwrite each other; graded
+  // entries are removed so each day is posted once, surviving restarts.
+  async _gradeAndTrackChargeNeed(now, chargeNeed) {
+    const tz = this.homey.clock.getTimezone();
+    const today = TimeSlots.dayKey(now, tz);
+    let forecasts = this.getStoreValue('chargeNeedForecasts') || [];
+
+    // Track: refresh the standing forecast for tomorrow (skip when we have no
+    // real estimate to grade against).
+    if (chargeNeed.source === 'history') {
+      const tomorrow = TimeSlots.dayKeyOnDayOffset(now, 1, tz);
+      forecasts = forecasts.filter((f) => f.day !== tomorrow);
+      forecasts.push({
+        day: tomorrow,
+        expectedKwh: chargeNeed.expectedKwh,
+        lowKwh: chargeNeed.lowKwh,
+        highKwh: chargeNeed.highKwh,
+        confidence: chargeNeed.confidence,
+      });
+    }
+
+    // Grade: for any forecast whose day has completed and now has an actual
+    // daily total. A completed day with no actual yet (a data gap) is kept a
+    // few days, then dropped rather than graded against nothing.
+    const actuals = new Map(
+      DailyEnergyModel.dailyTotals(this.getStoreValue('meterDayLog') || [], { excludeDay: today })
+        .map((t) => [t.day, t.kwh]),
+    );
+    const remaining = [];
+    for (const f of forecasts) {
+      if (f.day >= today) { remaining.push(f); continue; } // today or future - not done
+      const actual = actuals.get(f.day);
+      if (actual == null) {
+        if (TimeSlots.dayKeyDiff(f.day, today) <= 3) remaining.push(f);
+        continue;
+      }
+      await this._writeChargeNeedAccuracy(f, actual, tz);
+    }
+
+    await this.setStoreValue('chargeNeedForecasts', remaining).catch(this.error);
+  }
+
+  async _writeChargeNeedAccuracy(forecast, actualKwh, tz) {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const weekday = dayNames[TimeSlots.weekdayOfDayKey(forecast.day)];
+    const actual = Math.round(actualKwh * 10) / 10;
+    const inBand = actualKwh >= forecast.lowKwh && actualKwh <= forecast.highKwh;
+    const bandVerdict = inBand ? 'within the expected band'
+      : (actualKwh > forecast.highKwh ? 'above the band' : 'below the band');
+    const diff = Math.round((actual - forecast.expectedKwh) * 10) / 10;
+    const diffVerdict = diff === 0 ? 'spot on'
+      : `${Math.abs(diff)} kWh ${diff > 0 ? 'more' : 'less'} than predicted`;
+
+    const excerpt = `🔋 Charge need ${weekday}: predicted ${forecast.expectedKwh} kWh `
+      + `(band ${forecast.lowKwh}–${forecast.highKwh}), actual ${actual} kWh — `
+      + `${bandVerdict}, ${diffVerdict} (confidence ${forecast.confidence}%)`;
+
+    await this._writeTimeline(excerpt);
+  }
+
+  // Fire only on a real move: the first usable estimate, or a shift of at least
+  // 0.5 kWh in the expected need. A 'none' result (no history) never fires and
+  // never overwrites the last real value we told Flows about.
+  _chargeNeedChangedMaterially(next) {
+    if (next.source === 'none') return false;
+    if (!this._lastChargeNeed || this._lastChargeNeed.source === 'none') return true;
+    return Math.abs(this._lastChargeNeed.expectedKwh - next.expectedKwh) >= 0.5;
   }
 
   async _maybeFireWithinTrigger(direction, prediction, now) {
