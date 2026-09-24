@@ -112,5 +112,35 @@ function runConfidenceReflectsConsistency() {
   console.log('OK: confidence tracks consistency, not just sample volume.');
 }
 
+/**
+ * Leaving earlier than predicted must roll the departure forecast to the next
+ * day straight away, not keep counting down to today's (already happened)
+ * predicted time.
+ */
+function runEarlyDepartureRollsToTomorrow() {
+  const device = new FakeDevice();
+  const model = new PredictionModel(device);
+  const baseMonday = new Date(2026, 0, 5);
+
+  for (let week = 0; week < 4; week++) {
+    for (let weekday = 1; weekday <= 5; weekday++) {
+      model.recordEvent('departure', weekdayDate(baseMonday, week, weekday, 7, 30));
+    }
+  }
+
+  const leftAt = weekdayDate(baseMonday, 4, 3, 7, 15); // Wednesday, 15 min early
+  model.recordEvent('departure', leftAt);
+  const now = new Date(leftAt.getTime() + 60000);
+  const departure = model.predictNext('departure', now);
+
+  console.log('After early departure:', departure);
+  assert(departure.predictedTime, 'expected a departure prediction');
+  assert.strictEqual(departure.predictedTime.getDate(), leftAt.getDate() + 1,
+    `expected tomorrow's departure after leaving early, got ${departure.predictedTime}`);
+
+  console.log('OK: an early departure rolls the forecast to the next day.');
+}
+
 run();
 runConfidenceReflectsConsistency();
+runEarlyDepartureRollsToTomorrow();
