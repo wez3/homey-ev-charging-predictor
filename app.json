@@ -11,7 +11,7 @@
     "en": "EV Charging Predictor"
   },
   "description": {
-    "en": "Predicts when your car will depart and arrive by learning from your EV charger's connection state, entirely on your Homey with no cloud calls. Exposes the prediction as Flow cards so your own energy-management Flows can finish charging by the time you leave. Works with any charger exposing Homey's standard EV charging state capability; Easee additionally gets instant history from Homey Insights, so it predicts from day one instead of learning from scratch."
+    "en": "Learns when your car leaves, comes home and how much energy it needs, all from your EV charger."
   },
   "category": [
     "energy"
