@@ -1,6 +1,6 @@
 {
   "id": "com.evcharging.predictor",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "compatibility": ">=12.4.5",
   "sdk": 3,
   "platforms": [
