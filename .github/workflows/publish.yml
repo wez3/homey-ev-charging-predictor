@@ -1,7 +1,11 @@
 name: Publish to Homey App Store
 
-# Run by hand from the Actions tab. Bumps the version, uploads the build to the
-# Homey App Store, then commits and tags the new version on main.
+# Runs on every push to main that touches the app, and can also be started by
+# hand from the Actions tab (to pick minor/major or write the changelog).
+# Bumps the version, uploads the build to the Homey App Store, then commits
+# and tags the new version on main. That bump commit is pushed with the
+# built-in GITHUB_TOKEN, which GitHub never lets trigger another workflow run,
+# so this cannot loop.
 #
 # The upload lands as a Draft. Releasing it to Test is one click in the
 # Developer Portal (the job summary links straight to it); Athom offers no
@@ -11,6 +15,15 @@ name: Publish to Homey App Store
 # https://tools.developer.homey.app/me
 
 on:
+  push:
+    branches: [main]
+    # Changes that don't alter the app itself don't need a new build.
+    paths-ignore:
+      - '.github/**'
+      - 'test/**'
+      - 'README.md'
+      - 'TESTING.md'
+      - 'LICENSE'
   workflow_dispatch:
     inputs:
       version:
@@ -24,8 +37,8 @@ on:
           - major
       changelog:
         type: string
-        description: Changelog (English, shown in the App Store)
-        required: true
+        description: Changelog (English, shown in the App Store). Empty = commit subjects since the last release.
+        required: false
 
 permissions:
   contents: write
@@ -42,6 +55,16 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0 # tags and history, for the changelog
+
+      - name: Check HOMEY_PAT secret
+        env:
+          HOMEY_PAT: ${{ secrets.HOMEY_PAT }}
+        run: |
+          if [ -z "$HOMEY_PAT" ]; then
+            echo "::error::Repository secret HOMEY_PAT is not set. Create a token at https://tools.developer.homey.app/me and add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -53,12 +76,32 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # A manual run uses what was typed; an automatic run is a patch release
+      # whose changelog is the commit subjects since the last version tag
+      # (merge commits and earlier version bumps left out).
+      - name: Changelog
+        id: changelog
+        env:
+          INPUT_CHANGELOG: ${{ inputs.changelog }}
+        run: |
+          if [ -n "$INPUT_CHANGELOG" ]; then
+            text="$INPUT_CHANGELOG"
+          else
+            last=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+            range=${last:+$last..}HEAD
+            text=$(git log --no-merges --format=%s "$range" \
+              | grep -v -E '^(Bump|Update Homey App) [Vv]ersion' \
+              | head -n 10 | paste -sd ';' - | sed 's/;/; /g') || true
+          fi
+          [ -n "$text" ] || text="Maintenance update"
+          echo "text=${text:0:400}" >> "$GITHUB_OUTPUT"
+
       - name: Bump version
         uses: athombv/github-action-homey-app-version@master
         id: version
         with:
-          version: ${{ inputs.version }}
-          changelog: ${{ inputs.changelog }}
+          version: ${{ inputs.version || 'patch' }}
+          changelog: ${{ steps.changelog.outputs.text }}
 
       - name: Validate app (publish level)
         run: npx homey app validate --level publish
@@ -78,12 +121,18 @@ jobs:
           git add -A
           git commit -m "Bump version to v${{ steps.version.outputs.version }}"
           git tag "v${{ steps.version.outputs.version }}"
+          # Someone may have pushed to main during the run; their commit
+          # triggers its own (queued) publish run, this one just lands on top.
+          git pull --rebase origin main
+          git tag -f "v${{ steps.version.outputs.version }}"
           git push origin HEAD:main --tags
 
       - name: Summary
         run: |
           {
             echo "### v${{ steps.version.outputs.version }} uploaded as Draft"
+            echo ""
+            echo "Changelog: ${{ steps.changelog.outputs.text }}"
             echo ""
             echo "Release it to **Test** here: ${{ steps.publish.outputs.url }}"
             echo ""
