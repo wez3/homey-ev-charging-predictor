@@ -1,0 +1,91 @@
+name: Publish to Homey App Store
+
+# Run by hand from the Actions tab. Bumps the version, uploads the build to the
+# Homey App Store, then commits and tags the new version on main.
+#
+# The upload lands as a Draft. Releasing it to Test is one click in the
+# Developer Portal (the job summary links straight to it); Athom offers no
+# Action or documented API for that step.
+#
+# Needs a repository secret HOMEY_PAT: a personal access token from
+# https://tools.developer.homey.app/me
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: choice
+        description: Version bump
+        required: true
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+      changelog:
+        type: string
+        description: Changelog (English, shown in the App Store)
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Bump version
+        uses: athombv/github-action-homey-app-version@master
+        id: version
+        with:
+          version: ${{ inputs.version }}
+          changelog: ${{ inputs.changelog }}
+
+      - name: Validate app (publish level)
+        run: npx homey app validate --level publish
+
+      - name: Publish
+        uses: athombv/github-action-homey-app-publish@master
+        id: publish
+        with:
+          personal_access_token: ${{ secrets.HOMEY_PAT }}
+
+      # Only after a successful upload, so a failed publish never leaves a
+      # version bump on main without a matching build.
+      - name: Commit & tag version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Bump version to v${{ steps.version.outputs.version }}"
+          git tag "v${{ steps.version.outputs.version }}"
+          git push origin HEAD:main --tags
+
+      - name: Summary
+        run: |
+          {
+            echo "### v${{ steps.version.outputs.version }} uploaded as Draft"
+            echo ""
+            echo "Release it to **Test** here: ${{ steps.publish.outputs.url }}"
+            echo ""
+            echo "Test link: https://homey.app/a/com.evcharging.predictor/test/"
+          } >> "$GITHUB_STEP_SUMMARY"
