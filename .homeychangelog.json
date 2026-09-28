@@ -13,5 +13,8 @@
   },
   "1.4.3": {
     "en": "Updated store text"
+  },
+  "1.4.4": {
+    "en": "Publish automatically on every push to main; Add CI and a manual publish-to-App-Store workflow; Keep forecasting today's departure while the car is still home"
   }
 }
