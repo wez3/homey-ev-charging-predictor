@@ -406,14 +406,19 @@ class EVChargingPredictorDevice extends Homey.Device {
   // the forecast is for *today's* departure (so we grade the final morning
   // forecast, not a stale one), and seeds itself from a forecast for a future
   // day when nothing is held yet. Crucially it does NOT overwrite a same-day
-  // forecast once "now" has passed the predicted time: predictNext then rolls
-  // to tomorrow, and grading against that rolled-over value would look like a
-  // ~24h miss. All persisted so a restart mid-morning still grades correctly.
+  // forecast once "now" has passed the predicted time: predictNext then
+  // re-forecasts later today or rolls to tomorrow, and grading against either
+  // would hide the real miss. All persisted so a restart mid-morning still
+  // grades correctly.
   _trackDepartureOutstanding(prediction, now) {
     if (!prediction || !prediction.predictedTime) return;
     const predDay = this._dayKey(prediction.predictedTime);
     const nowDay = this._dayKey(now);
     if (predDay !== nowDay && this._outstandingDeparture) return;
+
+    const held = this._outstandingDeparture;
+    if (held && this._dayKey(new Date(held.predictedTime)) === nowDay
+      && new Date(held.predictedTime).getTime() <= now.getTime()) return;
 
     this._outstandingDeparture = {
       predictedTime: prediction.predictedTime.toISOString(),

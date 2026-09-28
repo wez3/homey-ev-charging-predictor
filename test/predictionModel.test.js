@@ -141,6 +141,45 @@ function runEarlyDepartureRollsToTomorrow() {
   console.log('OK: an early departure rolls the forecast to the next day.');
 }
 
+/**
+ * Still home after the usual departure time: the forecast must stay on today
+ * when history shows later departures on this kind of day, and move on to
+ * tomorrow only when nothing later is on record.
+ */
+function runLateDepartureStaysToday() {
+  const baseMonday = new Date(2026, 0, 5);
+
+  // Irregular Sundays: 10:00, 10:40, 11:45, 14:40 in consecutive weeks.
+  const sundays = new PredictionModel(new FakeDevice());
+  [[10, 0], [10, 40], [11, 45], [14, 40]].forEach(([h, m], week) => {
+    sundays.recordEvent('departure', weekdayDate(baseMonday, week, 0, h, m));
+  });
+  const sunday = weekdayDate(baseMonday, 4, 0, 0, 0);
+  const before = sundays.predictNext('departure', weekdayDate(baseMonday, 4, 0, 8, 0));
+  const late = sundays.predictNext('departure', weekdayDate(baseMonday, 4, 0, 11, 0));
+  console.log('Irregular Sunday, 08:00:', before, 'still home at 11:00:', late);
+  assert.strictEqual(late.predictedTime.getDate(), sunday.getDate(),
+    `expected a later departure today, got ${late.predictedTime}`);
+  assert(late.predictedTime.getHours() >= 11, `expected after 11:00, got ${late.predictedTime}`);
+
+  // Metronomic workdays at 07:30: nothing later on record, so a day spent at
+  // home must not keep announcing an imminent departure.
+  const workdays = new PredictionModel(new FakeDevice());
+  for (let week = 0; week < 4; week++) {
+    for (let weekday = 1; weekday <= 5; weekday++) {
+      workdays.recordEvent('departure', weekdayDate(baseMonday, week, weekday, 7, 30));
+    }
+  }
+  const wednesday = weekdayDate(baseMonday, 4, 3, 10, 0);
+  const home = workdays.predictNext('departure', wednesday);
+  console.log('Metronomic workday, still home at 10:00:', home);
+  assert.strictEqual(home.predictedTime.getDate(), wednesday.getDate() + 1,
+    `expected tomorrow when nothing later is on record, got ${home.predictedTime}`);
+
+  console.log('OK: a late departure stays on today only when history supports it.');
+}
+
 run();
 runConfidenceReflectsConsistency();
 runEarlyDepartureRollsToTomorrow();
+runLateDepartureStaysToday();
