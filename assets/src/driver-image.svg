@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Source for drivers/ev_charging_predictor/assets/images/{large,small}.png:
+  a car plugged into a wall charger, on a transparent background.
+  Original artwork for this project; render with `npm run images`.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
+  <!-- ground shadow -->
+  <ellipse cx="490" cy="730" rx="440" ry="26" fill="#000000" fill-opacity="0.12"/>
+
+  <!-- wall charger -->
+  <rect x="768" y="292" width="140" height="232" rx="26" fill="#eceff1" stroke="#455a64" stroke-width="14"/>
+  <rect x="796" y="330" width="84" height="104" rx="12" fill="#263238"/>
+  <circle cx="838" cy="382" r="32" fill="none" stroke="#66bb6a" stroke-width="10"/>
+  <path d="M838 364 L838 384 L852 393" fill="none" stroke="#66bb6a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="838" cy="478" r="14" fill="#66bb6a"/>
+  <path d="M838 524 Q838 618 770 612 Q726 608 712 582" fill="none" stroke="#37474f" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- car body -->
+  <path d="M80 655 L80 580 Q80 522 142 514 L245 505 L318 428 Q333 412 358 412 L478 412 Q503 412 520 430 L592 505 L668 520 Q710 529 710 572 L710 655 Z" fill="#2e7d32"/>
+  <path d="M80 640 L710 640 L710 655 L80 655 Z" fill="#1b5e20"/>
+  <!-- windows -->
+  <path d="M292 500 L350 446 L478 446 L536 500 Z" fill="#c8e6c9"/>
+  <rect x="404" y="446" width="20" height="54" fill="#2e7d32"/>
+  <!-- door line and handle -->
+  <path d="M414 512 L414 630" stroke="#1b5e20" stroke-width="6"/>
+  <rect x="438" y="530" width="40" height="10" rx="5" fill="#1b5e20"/>
+  <!-- lights -->
+  <rect x="682" y="540" width="28" height="22" rx="8" fill="#fff59d"/>
+  <rect x="80" y="545" width="22" height="26" rx="8" fill="#ef5350"/>
+  <!-- wheels -->
+  <circle cx="188" cy="660" r="66" fill="#263238"/>
+  <circle cx="188" cy="660" r="28" fill="#b0bec5"/>
+  <circle cx="590" cy="660" r="66" fill="#263238"/>
+  <circle cx="590" cy="660" r="28" fill="#b0bec5"/>
+</svg>

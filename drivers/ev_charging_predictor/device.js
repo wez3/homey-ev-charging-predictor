@@ -638,14 +638,19 @@ class EVChargingPredictorDevice extends Homey.Device {
     await this._bindSource();
   }
 
-  async onDeleted() {
+  _teardown() {
     this._destroyCapabilityInstances();
+    this._cancelPendingCommit();
     if (this._recomputeInterval) this.homey.clearInterval(this._recomputeInterval);
     if (this._resyncInterval) this.homey.clearInterval(this._resyncInterval);
   }
 
+  async onDeleted() {
+    this._teardown();
+  }
+
   async onUninit() {
-    this._destroyCapabilityInstances();
+    this._teardown();
   }
 
 }

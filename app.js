@@ -24,11 +24,12 @@ class EVChargingPredictorApp extends Homey.App {
       this._apiRetryTimer = null;
     }
 
+    let timeoutTimer = null;
     try {
       this.api = await Promise.race([
         HomeyAPI.createAppAPI({ homey: this.homey }),
         new Promise((_, reject) => {
-          this.homey.setTimeout(() => reject(new Error('HomeyAPI.createAppAPI timed out')), API_INIT_TIMEOUT_MS);
+          timeoutTimer = this.homey.setTimeout(() => reject(new Error('HomeyAPI.createAppAPI timed out')), API_INIT_TIMEOUT_MS);
         }),
       ]);
       this.log('HomeyAPI connected');
@@ -36,6 +37,8 @@ class EVChargingPredictorApp extends Homey.App {
     } catch (err) {
       this.error('HomeyAPI init failed, retrying in 60s:', err.message);
       this._apiRetryTimer = this.homey.setTimeout(() => this._initApi(), API_RETRY_DELAY_MS);
+    } finally {
+      this.homey.clearTimeout(timeoutTimer);
     }
   }
 

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Source for assets/images/{large,small}.png: a car charging at home, with the
+  app's predicted departure shown as a card. Original artwork for this project;
+  render with `npm run images`.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700" viewBox="0 0 1000 700">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8f5e9"/>
+      <stop offset="1" stop-color="#c8e6c9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1000" height="700" fill="url(#sky)"/>
+
+  <!-- ground -->
+  <rect y="610" width="1000" height="90" fill="#a5d6a7"/>
+  <rect x="520" y="610" width="480" height="90" fill="#cfd8dc"/>
+
+  <!-- house -->
+  <path d="M30 270 L295 110 L560 270 Z" fill="#455a64"/>
+  <rect x="60" y="260" width="480" height="350" fill="#fafafa"/>
+  <rect x="100" y="320" width="110" height="90" rx="6" fill="#b3e5fc" stroke="#90a4ae" stroke-width="6"/>
+  <rect x="250" y="440" width="100" height="170" rx="6" fill="#8d6e63"/>
+  <circle cx="330" cy="530" r="7" fill="#ffe082"/>
+  <rect x="390" y="320" width="110" height="90" rx="6" fill="#b3e5fc" stroke="#90a4ae" stroke-width="6"/>
+
+  <!-- wall charger on the house -->
+  <rect x="440" y="440" width="64" height="104" rx="12" fill="#eceff1" stroke="#455a64" stroke-width="6"/>
+  <rect x="452" y="456" width="40" height="44" rx="6" fill="#263238"/>
+  <path d="M476 462 L462 482 L472 482 L466 496 L484 474 L474 474 Z" fill="#66bb6a"/>
+  <path d="M472 544 Q472 600 520 588 Q548 580 560 556" fill="none" stroke="#37474f" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- car, mirrored to face the charger -->
+  <ellipse cx="770" cy="652" rx="230" ry="14" fill="#000000" fill-opacity="0.12"/>
+  <g transform="translate(1021.5 178) scale(-0.65 0.65)">
+    <path d="M80 655 L80 580 Q80 522 142 514 L245 505 L318 428 Q333 412 358 412 L478 412 Q503 412 520 430 L592 505 L668 520 Q710 529 710 572 L710 655 Z" fill="#2e7d32"/>
+    <path d="M80 640 L710 640 L710 655 L80 655 Z" fill="#1b5e20"/>
+    <path d="M292 500 L350 446 L478 446 L536 500 Z" fill="#c8e6c9"/>
+    <rect x="404" y="446" width="20" height="54" fill="#2e7d32"/>
+    <path d="M414 512 L414 630" stroke="#1b5e20" stroke-width="6"/>
+    <rect x="438" y="530" width="40" height="10" rx="5" fill="#1b5e20"/>
+    <rect x="682" y="540" width="28" height="22" rx="8" fill="#fff59d"/>
+    <rect x="80" y="545" width="22" height="26" rx="8" fill="#ef5350"/>
+    <circle cx="188" cy="660" r="66" fill="#263238"/>
+    <circle cx="188" cy="660" r="28" fill="#b0bec5"/>
+    <circle cx="590" cy="660" r="66" fill="#263238"/>
+    <circle cx="590" cy="660" r="28" fill="#b0bec5"/>
+  </g>
+
+  <!-- prediction card -->
+  <rect x="616" y="66" width="350" height="190" rx="26" fill="#000000" fill-opacity="0.08" transform="translate(0 8)"/>
+  <rect x="616" y="66" width="350" height="190" rx="26" fill="#ffffff"/>
+  <circle cx="680" cy="132" r="30" fill="none" stroke="#2e7d32" stroke-width="9"/>
+  <path d="M680 114 L680 134 L694 143" fill="none" stroke="#2e7d32" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="728" y="112" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" fill="#607d8b">Departs</text>
+  <text x="726" y="160" font-family="DejaVu Sans, Arial, sans-serif" font-size="52" font-weight="bold" fill="#263238">07:45</text>
+  <text x="646" y="222" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="bold" fill="#2e7d32">92% sure · 12 kWh</text>
+</svg>

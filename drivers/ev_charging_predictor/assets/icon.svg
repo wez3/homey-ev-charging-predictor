@@ -1,26 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  EV Charging Predictor app icon - original artwork for this project.
+  EV Charging Predictor driver icon - original artwork for this project.
 
-  A clock face with a lightning bolt in place of hands: this app predicts the
-  *timing* of charging, so the two ideas are combined rather than drawing yet
-  another charging station (which is also what Athom's own car-charger icon
-  already is).
+  A car plugged into a wall charger whose display shows a clock: the device this
+  driver creates is "the car at your charger, and when it will leave". Kept
+  distinct from the app icon (a clock face with a bolt) so the driver is easy to
+  recognise in the pairing list, as the App Store guidelines ask.
 
-  Follows Athom's device-icon conventions so it sits alongside them: 960x960
-  viewBox, solid black, no background fill. Homey renders an app's icon.svg as
-  a themed mask rather than a literal image, so any background shape would
-  flatten into a single solid blob.
+  Same conventions as the app icon: 960x960 viewBox, solid black line art, no
+  background fill, because Homey renders icon.svg as a themed mask.
 -->
 <svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
-  <circle cx="480" cy="480" r="360" fill="none" stroke="#000000" stroke-width="72"/>
-  <g fill="#000000">
-    <!-- hour markers at 12 / 3 / 6 / 9 -->
-    <rect x="456" y="170" width="48" height="60"/>
-    <rect x="456" y="730" width="48" height="60"/>
-    <rect x="730" y="456" width="60" height="48"/>
-    <rect x="170" y="456" width="60" height="48"/>
-    <!-- bolt, in place of the hands -->
-    <path d="M545 225 L380 520 L468 520 L410 755 L590 450 L500 450 Z"/>
+  <g fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round">
+    <!-- car body, side view facing right -->
+    <path stroke-width="40" d="M115 655 L80 655 L80 580 Q80 522 142 514 L245 505 L318 428 Q333 412 358 412 L478 412 Q503 412 520 430 L592 505 L668 520 Q710 529 710 572 L710 655 L670 655"/>
+    <path stroke-width="40" d="M262 655 L512 655"/>
+    <!-- windows -->
+    <path stroke-width="28" d="M292 500 L350 446 L478 446 L536 500 Z"/>
+    <path stroke-width="28" d="M414 446 L414 500"/>
+    <!-- wheels -->
+    <circle cx="188" cy="660" r="62" stroke-width="40"/>
+    <circle cx="590" cy="660" r="62" stroke-width="40"/>
+    <!-- wall charger with a clock on its display -->
+    <rect x="768" y="292" width="140" height="232" rx="26" stroke-width="40"/>
+    <circle cx="838" cy="384" r="40" stroke-width="22"/>
+    <path stroke-width="22" d="M838 362 L838 386 L856 398"/>
+    <!-- cable from charger to the car's charge port -->
+    <path stroke-width="30" d="M838 524 Q838 618 770 612 Q726 608 712 582"/>
   </g>
 </svg>

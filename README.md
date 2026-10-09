@@ -221,17 +221,20 @@ charger - one step, done.
     stay legible down to ~48px. Custom capabilities support an `icon` field; Homey's own
     built-in capabilities instead style themselves with `color` + `uiComponent` and ship
     no per-capability SVG, so there was nothing to reference by name.
-  - `assets/images/*.png` - the App Store images: the app icon in white on a solid
-    brand-green (`#2e7d32`) background. Rendered at 4x and downsampled, since thin
-    line art aliases badly at small sizes. Regenerated from the original `icon.svg`
-    above.
-  - `drivers/ev_charging_predictor/assets/images/*.png` - the app icon rasterised in
-    brand green onto a genuinely transparent RGBA background, matching how real
-    driver images float on transparency in the pairing screens.
-  - `drivers/ev_charging_predictor/assets/icon.svg` - the same original app icon
-    (clock-and-bolt). Note the official CLI template only scaffolds an app-level
-    `icon.svg`, and neither Tesla's nor Easee's app ships a driver-level one, so
-    Homey may well ignore it; the device tile is driven by the driver's PNGs regardless.
+  - `assets/images/*.png` - the App Store images: a flat illustration of a car
+    charging at home with the predicted departure ("Departs 07:45") on a card, as
+    Athom's review asked for a picture of what the app does rather than the icon on a
+    coloured background. Rendered from `assets/src/app-image.svg`.
+  - `drivers/ev_charging_predictor/assets/images/*.png` - a car plugged into a wall
+    charger, in colour on a transparent background. Rendered from
+    `assets/src/driver-image.svg`.
+  - `drivers/ev_charging_predictor/assets/icon.svg` - the driver icon: a car plugged
+    into a wall charger with a clock on its display, in the same black line-art style
+    as the app icon but deliberately different from it, so the driver is easy to pick
+    out in the pairing list.
+
+  `npm run images` re-renders all four PNGs from the SVG sources with `sharp`
+  (rasterised at high density and downsampled, so lines and text stay crisp).
 
   **Licensing:** every icon and image is original artwork for this project - nothing
   from `homey-lib` or any other app is copied or shipped. They only follow Athom's
