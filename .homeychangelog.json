@@ -19,5 +19,8 @@
   },
   "1.4.5": {
     "en": "Add 'Car connected' status to charger_status values"
+  },
+  "1.4.6": {
+    "en": "New App Store and driver images, a separate driver icon and a shorter description"
   }
 }
